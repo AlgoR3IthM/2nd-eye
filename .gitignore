@@ -15,4 +15,6 @@ android-webwatcher/.gradle/
 android-webwatcher/local.properties
 integrations/watcher/.profile/
 integrations/watcher/trusted.json
+integrations/mail/trusted.txt
+integrations/mail/state/
 Cerinte/test_set/

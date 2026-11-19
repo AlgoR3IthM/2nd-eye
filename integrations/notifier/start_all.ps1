@@ -1,4 +1,4 @@
-<#
+﻿<#
   2nd Eye: start the whole local stack hidden. Each piece starts only if it is not already running.
   Paths are relative to this script, so the folder can be moved. Prints no message content (it never sees any).
   Run:  powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File integrations\notifier\start_all.ps1
@@ -12,7 +12,7 @@ $Notif  = Join-Path $PSScriptRoot 'notifier.py'
 
 if (-not $env:SCAMSHIELD_MODEL) { $env:SCAMSHIELD_MODEL = 'google/gemma-4-26b-a4b' }
 if (-not $env:SCAMSHIELD_GPU)   { $env:SCAMSHIELD_GPU   = '0.85' }
-if (-not $env:SCAMSHIELD_CTX)   { $env:SCAMSHIELD_CTX   = '4096' }
+if (-not $env:SCAMSHIELD_CTX)   { $env:SCAMSHIELD_CTX   = '8192' }
 
 function Test-Running([string]$Needle) {
     $hit = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
@@ -64,3 +64,4 @@ if (-not (Test-Running 'notifier.py')) {
     $exe = if (Test-Path $Pyw) { $Pyw } else { $Py }
     Start-Process -FilePath $exe -WorkingDirectory $Root -WindowStyle Hidden -ArgumentList "`"$Notif`""
 }
+

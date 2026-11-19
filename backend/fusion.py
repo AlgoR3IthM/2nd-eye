@@ -180,14 +180,21 @@ _TYPE_KW = {
                  r"sa te cunosc (?:mai bine|in realitate|personal)|sa ne cunoastem (?:mai bine|personal)|"
                  r"(?:vreau|as vrea|mi-?ar placea|abia astept) sa (?:vin|ajung|zbor) (?:la tine|sa te (?:vad|cunosc|intalnesc))|"
                  r"(?:bilet\w*|zbor\w*|drum\w*|avion\w*|calatori\w*)\b[^.!?\n]{0,40}\b(?:sa (?:vin|ajung) la tine|sa te (?:vad|cunosc|intalnesc))|"
-                 r"(?:sa (?:vin|ajung) la tine|sa te (?:vad|cunosc|intalnesc))\b[^.!?\n]{0,60}\b(?:bilet\w*|zbor\w*|avion\w*|calatori\w*)", 3)],
+                 r"(?:sa (?:vin|ajung) la tine|sa te (?:vad|cunosc|intalnesc))\b[^.!?\n]{0,60}\b(?:bilet\w*|zbor\w*|avion\w*|calatori\w*)|"
+                 r"\b(?:capitan|marinar|pilot)\w* (?:pe|de|la)\b|\bpe (?:un|o) vas\b|\bpe santier\w* (?:in|din)\b|nu pot face (?:video|apel video)|"
+                 r"camera (?:e|este|mi-?e) stricata|vaduv\w*", 3),
+                # love-bombing: pet names and declarations from someone met online
+                (r"\b(?:iubit(?:a|ul) (?:mea|meu)|iubito|iubitule|iubire\b|sufle\w* pereche|scumpa mea|scumpul meu|frumoaso|"
+                 r"sotia mea|sotul meu|raza mea de soare|te iubesc|dragostea mea)", 3)],
     "JOB_OFFER": [(r"\bjob\w*|angajar\w*|loc de munca|locuri de munca|recrut\w*|like-?uri|aprecieri|recenzi\w*|sarcin\w*|task\w*|"
                    r"part-?time|de acasa|comision\w*", 3)],
     "PRIZE_LOTTERY": [(r"tombola|ati castigat|ai castigat|castigator\w*|premiu\w*|loteri\w*|extragere|ati fost (?:ales|selectat)", 4)],
 }
 _TYPE_PRIORITY = ["ACCOUNT_TAKEOVER", "TECH_SUPPORT", "MARKETPLACE", "AUTHORITY_IMPERSONATION", "BANK_IMPERSONATION",
-                  "COURIER_FEE", "FAMILY_EMERGENCY", "PRIZE_LOTTERY", "INVESTMENT", "JOB_OFFER", "ROMANCE"]
+                  "COURIER_FEE", "FAMILY_EMERGENCY", "PRIZE_LOTTERY", "ROMANCE", "INVESTMENT", "JOB_OFFER"]
 _TYPE_RX = {t: [(re.compile(p), w) for p, w in kws] for t, kws in _TYPE_KW.items()}
+_KIN_VOCATIVE = re.compile(r"\b(?:mami|mamico|mamica|tati|taticule|bunico|buni|bunicule|bunicuta|mamaie|tataie|nepot\w*|"
+                           r"sunt (?:eu,? )?(?:fiul|fiica|copilul|baiatul|fata) (?:tau|ta))\b")
 
 
 def _scam_type(flags, sender_texts, sc, org, llm_type):
@@ -203,6 +210,11 @@ def _scam_type(flags, sender_texts, sc, org, llm_type):
                 if rx.search(blob):
                     sc_[t] += w
         f = set(flags)
+        # ROMANCE vs the rest: love language from someone met online carries the story (pet names, declarations, a far-away
+        # life) and wins over the money vehicle (customs parcel, gift card, "investment" the partner teaches). Returns with
+        # no love language stay INVESTMENT. A sender addressing the reader as a parent or grandparent is family, not romance.
+        if _KIN_VOCATIVE.search(blob):
+            sc_["ROMANCE"] = min(sc_["ROMANCE"], 3)
         claims = "RF_IMPERSONATION" in f
         if not claims:
             # an authority / bank word that nobody claims to be ("sunt la poliție") is weak evidence
@@ -283,6 +295,12 @@ def _llm_flags_by_n(res):
     return out
 
 
+_SENSITIVE_RX = re.compile(
+    r"\bcard\w*|\bcvv|\bcvc|\bpin\b|\bpin-?ul|\bparol\w*|\bcnp\b|\bcnp-?ul|cod\w* numeric|\bbuletin\w*|carte\w* de identitate|"
+    r"act\w* de identitate|\bpasaport\w*|\biban\w*|\bcont\w*|\bdate\w*|\bdetalii\w*|\bnumar\w* (?:de )?(?:card|cont|telefon)|"
+    r"\badres\w*|\bnumele\b|\bnume complet|\bseria\b|\blogin|\butilizator\w*|\bdata (?:de )?(?:nastere|expirare)|\bselfie|\bpoz\w* cu")
+
+
 def _accept_llm(code, evidence, text, ftext, known):
     cfg = (CAL.get("llm_flags") or {}).get(code) or {}
     if not cfg.get("accept", False):
@@ -299,6 +317,21 @@ def _accept_llm(code, evidence, text, ftext, known):
         if i < 0:
             return None
         return (0, 0)
+    if code == "RF_PAYMENT_REQUEST":
+        # the sender paying or giving back ("platesc cash la predare", "iti dau banii diseara") is not a request to pay
+        a = max([0] + [m.end() for m in re.finditer(r"[!?\n]+|\.(?=\s|$)", ftext[:i])])
+        if re.search(r"\b(?:platesc|platim|achit|achitam|va platesc|iti platesc|va dau|iti dau|ti-i dau|vi-i dau|iti trimit|va trimit|"
+                     r"iti returnez|va returnez|am platit|am achitat|ti-am trimis|v-am trimis)\b", ftext[a:i + len(ev)]):
+            return None
+    if code == "RF_DATA_REQUEST":
+        # the model must name what sensitive data is asked for ("trimite-mi reteta" is not a data request)
+        a = max([0] + [m.end() for m in re.finditer(r"[!?\n]+|\.(?=\s|$)", ftext[:i])])
+        b = min([len(ftext)] + [i + len(ev) + m.end() for m in re.finditer(r"[!?\n]+|\.(?=\s|$)", ftext[i + len(ev):])])
+        sent = ftext[a:b]
+        if hasattr(rules, "normalise"):
+            sent = rules.normalise(sent)[0]
+        if not _SENSITIVE_RX.search(sent):
+            return None
     if code in ("RF_CODE_REQUEST", "RF_REMOTE_ACCESS", "RF_DATA_REQUEST"):
         # the model must not turn a protective sentence ("nu mi-l da", "nu il spune nimanui") into a request
         a = max([0] + [m.end() for m in re.finditer(r"[!?\n]+|\.(?=\s|$)", ftext[:i])])

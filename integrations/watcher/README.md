@@ -81,7 +81,11 @@ Drop `readers/<name>.js`. First line: `// @service <name> <start url>`. Then
 
 ## Honest limits
 
-* **Selectors are unverified on live accounts.** They are written from knowledge of each site's DOM; expect to adjust them (Ctrl+Shift+S).
+* **Selectors are verified on a live account only for WhatsApp Web** (19.11.2026: chat list, unknown-number filter, opening the
+  thread, and telling her messages from theirs by the author on each message). Gmail, Telegram, Messenger and Instagram are
+  unverified on live accounts; check them with `--diag` before relying on them.
+* **WhatsApp reads only chats whose title starts with "+" or a digit** (numbers not saved in the phone book). Those chats are
+  opened, read and closed again; a SAFE chat that was unread is marked unread again (that last step is untested live).
   Verified only against the demo pages and the real login pages (no script errors).
 * Meta's terms forbid automated access: Messenger and Instagram should be shown on the demo pages, not on a real account.
 * Google may still refuse sign-in in an automated browser; use `--login` (visible), then `--hidden-window` if headless is refused.

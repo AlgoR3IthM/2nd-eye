@@ -1,6 +1,8 @@
 """2nd Eye notifier: native Windows toasts for new SUSPICIOUS / SCAM alerts.
 
-Shows a full-screen-centred overlay card (default, tkinter) and/or a Windows toast (--style). Polls the watcher's local status feed (default http://127.0.0.1:8010/alerts.json) and raises one
+Shows a full-screen-centred overlay card (default, tkinter) and/or a Windows toast (--style). Polls the local status feeds
+(default http://127.0.0.1:8010/alerts.json = WhatsApp watcher and http://127.0.0.1:8011/alerts.json = mail watcher;
+--source takes several comma-separated URLs, seen ids are kept per source) and raises one
 Windows toast per alert id. Run with pythonw for no console window:
 
     .venv\\Scripts\\pythonw.exe integrations\\notifier\\notifier.py
@@ -29,7 +31,7 @@ ICON_DIR = HERE / "icons"
 AUMID = "AlgoR3IthM.ScutulBunicii"
 APP_NAME = "2nd Eye"
 ATTRIBUTION = "2nd Eye · AlgoR3IthM"
-DEFAULT_SOURCE = "http://127.0.0.1:8010/alerts.json"
+DEFAULT_SOURCE = "http://127.0.0.1:8010/alerts.json,http://127.0.0.1:8011/alerts.json"  # WhatsApp watcher, mail watcher
 
 SERVICES = {"whatsapp": "WhatsApp", "messenger": "Messenger", "instagram": "Instagram",
             "telegram": "Telegram", "gmail": "Gmail"}
@@ -372,7 +374,8 @@ SAMPLES = [
 
 def main():
     ap = argparse.ArgumentParser(description="2nd Eye Windows notifier")
-    ap.add_argument("--source", default=DEFAULT_SOURCE, help="alerts.json URL")
+    ap.add_argument("--source", default=DEFAULT_SOURCE,
+                    help="alerts.json URL, or several comma-separated (default: watcher 8010 + mail 8011)")
     ap.add_argument("--interval", type=float, default=3.0, help="poll seconds")
     ap.add_argument("--style", default="overlay", choices=["overlay", "toast", "both"],
                     help="overlay = full alert card in the middle of the screen (default); toast = Windows toast; both")
@@ -420,7 +423,9 @@ def main():
         for s in SAMPLES:
             inbox.put(s)
     else:
-        threading.Thread(target=poll_loop, args=(a.source, a.interval, inbox.put), daemon=True).start()
+        # one worker per source, each with its own seen ids (memory only)
+        for src in [s.strip() for s in a.source.split(",") if s.strip()]:
+            threading.Thread(target=poll_loop, args=(src, a.interval, inbox.put), daemon=True).start()
     root.after(100, tick)
     try:
         root.mainloop()

@@ -6,7 +6,7 @@
 2. From a phone on the same Wi-Fi open `http://<laptop-ip>:8000`.
 3. Without the LLM: open `/` and the app still works (rules + link/number checks); the API takes `?use_llm=false`.
 
-Settings (environment variables): `SCAMSHIELD_MODEL` (default `qwen/qwen3-4b-2507`, 4B, about 2 s per scenario on the RTX 3080; 11 validation scenarios in about 25 s), `SCAMSHIELD_LLM_URL` (default `http://localhost:1234`, must be localhost), `SCAMSHIELD_GPU`, `SCAMSHIELD_CTX`.
+Settings (environment variables): `SCAMSHIELD_MODEL` (default `qwen/qwen3-4b-2507`, 4B, about 2 s per scenario on the RTX 3080; 11 validation scenarios in 26 s measured on 19.11 with one slot and an 8192 context; results identical across 3 runs), `SCAMSHIELD_LLM_URL` (default `http://localhost:1234`, must be localhost), `SCAMSHIELD_GPU`, `SCAMSHIELD_CTX`.
 Manual start: `.venv\Scripts\python.exe -m uvicorn backend.server:app --host 0.0.0.0 --port 8000 --no-access-log`.
 
 ## Architecture
@@ -26,3 +26,17 @@ Manual start: `.venv\Scripts\python.exe -m uvicorn backend.server:app --host 0.0
 ## Does any message leave your laptop?
 
 No. Analysis runs on this laptop only: the API listens on the local network, and the only outbound connection from the detector is to LM Studio on `localhost:1234` (the code refuses any other host). No cloud AI is used at runtime, no message text is logged or written to disk, and there are no analytics or external fonts/CDNs. The The server keeps a small in-memory result memo (at most 256 results, keyed by a SHA-256 of the scenario, the model id and the options) so that the same scenario analysed twice in one session returns the identical result. It lives in RAM only, is never written to disk, disappears when the server stops, and `DELETE /api/memo` clears it at any time. The Telegram bot, if used, only receives messages the user forwards to it and sends them to this same local API.
+
+## Jury checklist (the 10 minutes before our slot)
+
+1. Stop the live watcher and notifier so nothing else uses the model while the dashboard is built:
+   `Get-CimInstance Win32_Process | ? { $_.CommandLine -match 'watcher\.py|notifier\.py' } | % { Stop-Process -Id $_.ProcessId -Force }`
+2. Close any running API window, then double-click `run.bat`. It always reloads the model with one slot and an 8192 context
+   (`lms ps` must show PARALLEL 1, CONTEXT 8192), then opens http://localhost:8000. The status dot must say the model is on.
+3. Copy the Test Set folder somewhere outside the repo (never into Cerinte/, never into any AI assistant).
+4. Tab "Tablou de rezultate" -> load the whole folder in one action -> wait for all rows -> "Export CSV" as a backup.
+5. Do NOT restart the server until the presentation is over: inside one server session the same file always returns
+   the same result, so the jury's live re-run matches the dashboard row.
+6. Live re-run: tab "Verifică un mesaj" -> "Deschide fișier" -> the file the jury picks -> show the detail.
+7. Hands-on: the juror pastes into "Verifică un mesaj"; a pasted conversation goes into "Importă o conversație".
+8. If LM Studio dies on stage the app keeps working on rules and link checks only (status dot turns yellow); say so.

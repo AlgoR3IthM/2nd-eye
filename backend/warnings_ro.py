@@ -220,8 +220,15 @@ def _build(r, x):
                       "Do not send money; first ask your bank, on the number on the back of your card."}
 
     if st == "ROMANCE":
-        return {"ro": f"{h_ro} O persoană cunoscută doar pe internet {why_ro}. Nu trimiteți bani; vorbiți întâi cu cineva drag din familie.",
-                "en": f"{h_en} Someone you only know online {why_en}. Do not send money; talk to someone in your family first."}
+        # the action names what is actually being asked for
+        if "RF_CODE_REQUEST" in flags and "RF_PAYMENT_REQUEST" not in flags:
+            dont_ro, dont_en = "Nu dați niciun cod", "Do not give any code"
+        elif "RF_DATA_REQUEST" in flags and "RF_PAYMENT_REQUEST" not in flags:
+            dont_ro, dont_en = "Nu trimiteți poze cu buletinul sau cardul și nici datele lor", "Do not send photos or details of your ID or card"
+        else:
+            dont_ro, dont_en = "Nu trimiteți bani", "Do not send money"
+        return {"ro": f"{h_ro} O persoană cunoscută doar pe internet {why_ro}. {dont_ro}; vorbiți întâi cu cineva drag din familie.",
+                "en": f"{h_en} Someone you only know online {why_en}. {dont_en}; talk to someone in your family first."}
 
     if st == "JOB_OFFER":
         return {"ro": f"{h_ro} Vi se promit bani ușor pentru treburi simple, iar apoi vi se cer bani sau date. "

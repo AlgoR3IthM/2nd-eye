@@ -710,11 +710,13 @@ def _rt_llm_cache(path):
     fusion._llm.analyze = cached
 
 
-def run_redteam(use_llm, half="DEV", reveal=False, verbose=True):
+def run_redteam(use_llm, half="DEV", reveal=False, verbose=True, prefix=None):
     """half: DEV | HELD | ALL. HELD-OUT rows are printed only with reveal=True; totals always."""
     tot = {}
     for case in RT:
         sid, _ch, _s, _m, ev, et, ea = case
+        if prefix and not any(sid.startswith(p) for p in prefix.split(",")):
+            continue
         h = _rt_half(sid)
         if half != "ALL" and h != half:
             continue
@@ -857,6 +859,7 @@ def main():
     ap.add_argument("--half", default="DEV", choices=["DEV", "HELD", "ALL"])
     ap.add_argument("--reveal", action="store_true", help="print HELD-OUT rows too (do this once, at the end)")
     ap.add_argument("--llm-cache", default=None, metavar="FILE", help="red team only: cache LLM answers in FILE")
+    ap.add_argument("--prefix", default=None, help="red team only: run ids starting with these comma-separated prefixes (RM,RN = romance)")
     ap.add_argument("--raul", action="store_true", help="teammate's 100-case randomised benchmark (Nou Raul/stress_test.py)")
     a = ap.parse_args()
     if a.raul:
@@ -865,7 +868,7 @@ def main():
     if a.redteam:
         if not a.no_llm:
             _rt_llm_cache(a.llm_cache)
-        run_redteam(not a.no_llm, a.half, a.reveal)
+        run_redteam(not a.no_llm, a.half, a.reveal, prefix=a.prefix)
         return
     if a.repeat > 0:
         items = [(c[0], _mk(c)) for c in SELFTEST] if a.selftest else _folder_items(a.dir)
