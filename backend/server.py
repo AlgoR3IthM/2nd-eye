@@ -177,6 +177,53 @@ async def api_health():
     return await run_in_threadpool(_health_probe)
 
 
+_LIVE = {"whatsapp": "http://127.0.0.1:8010", "gmail": "http://127.0.0.1:8011"}
+
+
+def _live_fetch(base: str):
+    import urllib.request
+    try:
+        with urllib.request.urlopen(base + "/conversations.json", timeout=2) as r:
+            items = json.loads(r.read().decode("utf-8")).get("conversations") or []
+        return True, [i for i in items if isinstance(i, dict)]
+    except Exception:
+        return False, []
+
+
+def _live_all() -> dict:
+    out, items = {}, []
+    for name, base in _LIVE.items():
+        on, got = _live_fetch(base)
+        out[name] = {"on": on}
+        items.extend(got)
+    items.sort(key=lambda i: str(i.get("time") or ""), reverse=True)
+    out["items"] = items
+    return out
+
+
+def _live_clear() -> dict:
+    import urllib.request
+    res = {}
+    for name, base in _LIVE.items():
+        try:
+            req = urllib.request.Request(base + "/conversations.json", method="DELETE")
+            with urllib.request.urlopen(req, timeout=2):
+                res[name] = True
+        except Exception:
+            res[name] = False
+    return res
+
+
+@app.get("/api/live")
+async def api_live():
+    return JSONResponse(await run_in_threadpool(_live_all), headers={"Cache-Control": "no-store"})
+
+
+@app.delete("/api/live")
+async def api_live_clear():
+    return await run_in_threadpool(_live_clear)
+
+
 @app.get("/api/catalog")
 async def api_catalog():
     try:

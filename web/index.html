@@ -177,10 +177,12 @@ select{font-size:1.15rem;padding:10px;border:3px solid var(--line);border-radius
   <button class="hbtn" id="btnLang" type="button" aria-label="Limba / Language">EN</button>
 </header>
 
+<div id="liveAlert" class="hidden" role="alert" style="max-width:1100px;margin:12px auto;padding:0 16px"></div>
 <nav role="tablist">
   <button role="tab" id="tabCheck" aria-selected="true" aria-controls="pCheck" data-i="tabCheck"></button>
   <button role="tab" id="tabImp" aria-selected="false" aria-controls="pImp" data-i="tabImp"></button>
   <button role="tab" id="tabDash" aria-selected="false" aria-controls="pDash" data-i="tabDash"></button>
+  <button role="tab" id="tabLive" aria-selected="false" aria-controls="pLive" data-i="tabLive"></button>
 </nav>
 
 <main>
@@ -255,6 +257,15 @@ select{font-size:1.15rem;padding:10px;border:3px solid var(--line);border-radius
     <tbody id="tbody"></tbody>
   </table></div>
 </section>
+
+<section class="panel hidden" id="pLive" role="tabpanel">
+  <h2 data-i="liveTitle"></h2>
+  <div id="liveStatus" class="hint" aria-live="polite"></div>
+  <div class="hint" data-i="liveNote"></div>
+  <div class="row"><button class="btn" id="liveClear" type="button"><span aria-hidden="true">&#128465;</span> <span data-i="liveClear"></span></button></div>
+  <div class="hint" data-i="liveOpen"></div>
+  <div id="liveList"></div>
+</section>
 </main>
 
 <dialog id="dlgDetail">
@@ -325,7 +336,11 @@ var S = {
   impMsgs:" mesaje",
   fmt_whatsapp_web:"Format recunoscut: WhatsApp (copiat din WhatsApp Web sau desktop)", fmt_whatsapp_android:"Format recunoscut: WhatsApp (export Android)",
   fmt_whatsapp_ios:"Format recunoscut: WhatsApp (export iPhone)", fmt_telegram:"Format recunoscut: Telegram",
-  fmt_generic:"Format recunoscut: rânduri de tipul „Nume: mesaj”", fmt_plain:"Format: text simplu"
+  fmt_generic:"Format recunoscut: rânduri de tipul „Nume: mesaj”", fmt_plain:"Format: text simplu",
+  tabLive:"Mesaje verificate", liveTitle:"Mesaje verificate automat (WhatsApp și Gmail)", liveOn:"pornit", liveOff:"oprit",
+  liveClear:"Șterge lista", liveNote:"Mesajele stau doar în memoria acestui calculator și dispar la oprire.",
+  liveEmpty:"Încă nu am verificat nicio conversație.", liveQuiet:"fără alertă: nu cere nimic", liveMsgs:" mesaje",
+  liveScore:"scor ", liveOpen:"Apăsați pe un rând ca să vedeți conversația."
  },
  en:{
   loveTitle:"Signs of a fake love story", loveYes:"⚠ Found", loveNo:"✔ Not found",
@@ -374,7 +389,11 @@ var S = {
   impMsgs:" messages",
   fmt_whatsapp_web:"Format recognised: WhatsApp (copied from WhatsApp Web or desktop)", fmt_whatsapp_android:"Format recognised: WhatsApp (Android export)",
   fmt_whatsapp_ios:"Format recognised: WhatsApp (iPhone export)", fmt_telegram:"Format recognised: Telegram",
-  fmt_generic:"Format recognised: lines like \"Name: message\"", fmt_plain:"Format: plain text"
+  fmt_generic:"Format recognised: lines like \"Name: message\"", fmt_plain:"Format: plain text",
+  tabLive:"Checked messages", liveTitle:"Messages checked automatically (WhatsApp and Gmail)", liveOn:"on", liveOff:"off",
+  liveClear:"Clear the list", liveNote:"Messages stay only in this computer's memory and disappear when it stops.",
+  liveEmpty:"No conversation checked yet.", liveQuiet:"no alert: it asks for nothing", liveMsgs:" messages",
+  liveScore:"score ", liveOpen:"Press a row to see the conversation."
  }
 };
 var FLAGS = {
@@ -688,11 +707,129 @@ $("setClear").onclick = function(){ try{ localStorage.removeItem("sb_trusted"); 
 
 /* ---------- tabs / lang ---------- */
 function selectTab(which){
-  var m = {check:["tabCheck","pCheck"], imp:["tabImp","pImp"], dash:["tabDash","pDash"]};
+  var m = {check:["tabCheck","pCheck"], imp:["tabImp","pImp"], dash:["tabDash","pDash"], live:["tabLive","pLive"]};
   Object.keys(m).forEach(function(k){
     $(m[k][0]).setAttribute("aria-selected", k===which); $(m[k][1]).classList.toggle("hidden", k!==which);
   });
+  if(which==="live") liveStart(); else liveStop();
 }
+$("tabLive").onclick=function(){ selectTab("live"); };
+
+/* ---------- live: conversations read by the watchers (memory only, text via textContent) ---------- */
+var live = { timer:null, open:null, sig:{}, data:null, seen:null, on:false };
+function liveStop(){ live.on=false; }
+function liveStart(){ live.on=true; liveRender(); livePoll(); }
+function livePoll(){
+  fetch("/api/live",{cache:"no-store"}).then(function(r){ return r.json(); })
+    .then(function(d){ live.data=d; liveAlertCheck(d); if(live.on) liveRender(); })
+    .catch(function(){ live.data=null; if(live.on) liveRender(); });
+}
+live.timer = setInterval(livePoll, 2000); livePoll();   /* global: alerts work on every tab */
+function liveKey(it){ return String(it.service)+"|"+String(it.id); }
+function liveAlertCheck(d){
+  var items = Array.isArray(d && d.items)? d.items : [], first = live.seen===null, hit = null;
+  if(first) live.seen = {};
+  items.forEach(function(it){
+    var r = it.result||{}, k = liveKey(it), s = String(r.verdict)+"|"+String(r.risk_score);
+    if(live.seen[k]!==s){
+      live.seen[k] = s;
+      if(!first && !hit && (r.verdict==="SCAM"||r.verdict==="SUSPICIOUS")) hit = it;   /* items are newest first */
+    }
+  });
+  if(hit) liveBanner(hit);
+}
+function liveBanner(it){
+  var r = it.result||{}, v = r.verdict==="SCAM"?"SCAM":"SUSPICIOUS", k = liveKey(it), box = $("liveAlert");
+  clear(box);
+  var card = el("div","result "+v);
+  var head = el("div","vhead");
+  var ic = el("div","vicon",ICON[v]); ic.setAttribute("aria-hidden","true"); head.appendChild(ic);
+  head.appendChild(el("div","vlabel", EMO[v]+" "+t("v_"+v))); card.appendChild(head);
+  card.appendChild(el("div",null,(it.service==="gmail"?"✉ Gmail":"💬 WhatsApp")+" · "+String(it.sender||"")+" · "+
+    (lang==="ro"?"Scor ":"Score ")+(r.risk_score==null?"-":r.risk_score)+"/100"));
+  var warn = (r.warning && (r.warning[lang]||r.warning.ro)) || "";
+  if(warn) card.appendChild(el("div","warning",warn));
+  var flags = Array.isArray(r.red_flags)? r.red_flags : [];
+  if(flags.length){ var tg = el("div","tags"); flags.forEach(function(f){ tg.appendChild(el("span","tag","• "+flagName(f))); }); card.appendChild(tg); }
+  var acts = el("div","acts");
+  var see = el("button","btn",(lang==="ro"?"Vezi conversația":"See the conversation")); see.type="button";
+  see.onclick = function(){ box.classList.add("hidden"); clear(box); live.open=k; live.touched=true; delete live.sig[k]; selectTab("live"); };
+  var cl = el("button","btn",t("close")); cl.type="button";
+  cl.onclick = function(){ box.classList.add("hidden"); clear(box); };
+  acts.appendChild(see); acts.appendChild(cl); card.appendChild(acts);
+  box.appendChild(card); box.classList.remove("hidden");
+  try{ var AC = window.AudioContext||window.webkitAudioContext; if(AC){ var ac=new AC(), o=ac.createOscillator(), g=ac.createGain();
+    o.frequency.value=880; g.gain.value=0.15; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.35); } }catch(e){}
+}
+function liveRender(){
+  var d = live.data || {whatsapp:{on:false}, gmail:{on:false}, items:[]};
+  var items = Array.isArray(d.items)? d.items : [];
+  var cnt = {SCAM:0,SUSPICIOUS:0,SAFE:0};
+  items.forEach(function(it){ var v=(it.result||{}).verdict; if(cnt[v]!==undefined) cnt[v]++; });
+  function onoff(x){ return (x&&x.on)? "✔ "+t("liveOn") : "✖ "+t("liveOff"); }
+  $("liveStatus").textContent = "WhatsApp: "+onoff(d.whatsapp)+" · Gmail: "+onoff(d.gmail)+" · "+
+    ICON.SCAM+" SCAM "+cnt.SCAM+" · "+ICON.SUSPICIOUS+" SUSPICIOUS "+cnt.SUSPICIOUS+" · "+ICON.SAFE+" SAFE "+cnt.SAFE;
+  var list = $("liveList"), keep = {}, order = [];
+  items.forEach(function(it){
+    var key = String(it.service)+"|"+String(it.id); order.push(key); keep[key]=it;
+  });
+  /* remove rows that disappeared */
+  Array.prototype.slice.call(list.children).forEach(function(n){ if(!keep[n.getAttribute("data-k")]){ list.removeChild(n); delete live.sig[n.getAttribute("data-k")]; if(live.open===n.getAttribute("data-k")) live.open=null; } });
+  if(!items.length){ if(!list.firstChild || !list.firstChild.classList.contains("liveEmpty")){ clear(list); var e0=el("div","hint liveEmpty",t("liveEmpty")); e0.setAttribute("data-k",""); list.appendChild(e0);} return; }
+  var em = list.querySelector(".liveEmpty"); if(em) list.removeChild(em);
+  if(live.open===null && !live.touched){   /* newest SCAM / SUSPICIOUS open by default, warning visible */
+    for(var ai=0; ai<order.length; ai++){ var av=(keep[order[ai]].result||{}).verdict;
+      if(av==="SCAM"||av==="SUSPICIOUS"){ live.open=order[ai]; delete live.sig[order[ai]]; break; } }
+  }
+  if(!live.touched && live.open && keep[live.open]){ order.splice(order.indexOf(live.open),1); order.unshift(live.open); }
+  order.forEach(function(key, idx){
+    var it = keep[key], r = it.result || {}, sig = JSON.stringify([it.time, r]);
+    var node = list.querySelector('[data-k="'+CSS.escape(key)+'"]');
+    if(!node || live.sig[key]!==sig){
+      var fresh = liveRow(key, it);
+      if(node) list.replaceChild(fresh, node); else list.appendChild(fresh);
+      node = fresh; live.sig[key]=sig;
+    }
+    if(list.children[idx]!==node) list.insertBefore(node, list.children[idx]||null);
+  });
+}
+function liveRow(key, it){
+  var r = it.result || {}, v = (r.verdict==="SAFE"||r.verdict==="SUSPICIOUS"||r.verdict==="SCAM")? r.verdict : "SUSPICIOUS";
+  var wrap = el("div","liveItem"); wrap.setAttribute("data-k", key);
+  wrap.style.cssText = "border:3px solid "+VCOLOR[v]+";border-radius:12px;margin:0 0 12px;background:#fff";
+  var b = el("button","liveRow"); b.type="button";
+  b.style.cssText = "display:block;width:100%;text-align:left;font-size:18px;padding:12px;background:transparent;border:0;cursor:pointer;color:inherit";
+  b.setAttribute("aria-expanded", live.open===key ? "true":"false");
+  var svc = it.service==="gmail" ? "✉ Gmail" : "💬 WhatsApp";
+  var l1 = el("div",null); l1.style.fontWeight="700";
+  l1.appendChild(el("span",null, svc+" · ")); l1.appendChild(el("span",null, String(it.sender||"")));
+  var tm = String(it.time||"").replace("T"," "); l1.appendChild(el("span",null," · "+tm));
+  var l2 = el("div",null); l2.style.marginTop="4px";
+  var vb = el("span",null, ICON[v]+" "+vLabel(r)); vb.style.cssText="background:"+VCOLOR[v]+";color:#fff;padding:2px 10px;border-radius:8px;font-weight:700";
+  l2.appendChild(vb);
+  var n = Array.isArray(r.per_message)? r.per_message.length : 0;
+  l2.appendChild(el("span",null," · "+t("liveScore")+(r.risk_score==null?"-":r.risk_score)+"/100 · "+(r.scam_type||"-")+" · "+n+t("liveMsgs")));
+  b.appendChild(l1); b.appendChild(l2);
+  if(it.quiet){ var q=el("div",null,"ℹ "+t("liveQuiet")); q.style.marginTop="4px"; b.appendChild(q); }
+  var det = el("div",null); det.id = "liveDet-"+key.replace(/[^A-Za-z0-9_-]/g,"_"); det.style.padding="0 12px 12px";
+  b.onclick = function(){
+    var was = live.open===key; live.open = was? null : key; live.touched = true;
+    Array.prototype.slice.call($("liveList").querySelectorAll(".liveItem")).forEach(function(w){
+      var k=w.getAttribute("data-k"), d2=w.lastChild; w.firstChild.setAttribute("aria-expanded", live.open===k?"true":"false");
+      if(live.open!==k) clear(d2);
+    });
+    if(!was) liveDetail(det, r);
+  };
+  wrap.appendChild(b); wrap.appendChild(det);
+  if(live.open===key) setTimeout(function(){ liveDetail(det, r); }, 0);
+  return wrap;
+}
+function liveDetail(det, r){
+  var prev = curBox; renderResult(r, false, det.id); curBox = prev;
+}
+$("liveClear").onclick = function(){
+  fetch("/api/live",{method:"DELETE"}).catch(function(){}).then(function(){ live.open=null; live.touched=false; live.sig={}; clear($("liveList")); livePoll(); });
+};
 $("tabImp").onclick=function(){ selectTab("imp"); };
 $("tabCheck").onclick=function(){ selectTab("check"); };
 $("tabDash").onclick=function(){ selectTab("dash"); };

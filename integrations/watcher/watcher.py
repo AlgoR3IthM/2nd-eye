@@ -106,28 +106,58 @@ VERDICT_UI = {
 ORDER = {"SCAM": 0, "SUSPICIOUS": 1, "SAFE": 2}
 
 
+class Conversations:
+    """Last analysed conversations WITH the full API result, for the local web UI. Memory only: never on disk,
+    never printed. One entry per conversation, replaced on re-analysis; served only on 127.0.0.1."""
+
+    def __init__(self, keep: int = 40) -> None:
+        self.items: "collections.OrderedDict[str, dict]" = collections.OrderedDict()
+        self.keep = keep
+        self.lock = threading.Lock()
+
+    def add(self, cid: str, service: str, sender: str, result: dict, quiet: bool = False) -> None:
+        with self.lock:
+            self.items.pop(cid, None)
+            self.items[cid] = {"id": cid, "service": service, "sender": sender,
+                               "time": time.strftime("%Y-%m-%dT%H:%M:%S"), "result": result, "quiet": quiet}
+            while len(self.items) > self.keep:
+                self.items.popitem(last=False)
+
+    def feed(self) -> dict:
+        with self.lock:
+            return {"conversations": list(reversed(self.items.values()))}
+
+    def clear(self) -> None:
+        with self.lock:
+            self.items.clear()
+
+
 class Alerts:
     def __init__(self, keep: int = 50) -> None:
         self.items: "collections.OrderedDict[tuple, dict]" = collections.OrderedDict()
         self.keep = keep
         self.lock = threading.Lock()
         self.started = time.strftime("%H:%M:%S")
+        self.conv = Conversations()
 
-    def add(self, service: str, sender: str, verdict: str, score, warning: str, label: str, state: str = "") -> None:
+    def add(self, service: str, sender: str, verdict: str, score, warning: str, label: str, state: str = "",
+            red_flags=None, scam_type=None) -> None:
         # id = stable hash of service + sender + verdict + conversation state (a hash, never the text itself)
         aid = hashlib.sha1("|".join([service, sender, verdict, state]).encode("utf-8")).hexdigest()[:16]
         with self.lock:
             self.items.pop((service, sender), None)
             self.items[(service, sender)] = {"service": service, "sender": sender, "verdict": verdict, "score": score,
                                              "warning": warning, "label": label, "time": time.strftime("%H:%M:%S"),
-                                             "id": aid, "iso": time.strftime("%Y-%m-%dT%H:%M:%S")}
+                                             "id": aid, "iso": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                                             "red_flags": list(red_flags or []), "scam_type": scam_type}
             while len(self.items) > self.keep:
                 self.items.popitem(last=False)
 
     def feed(self) -> dict:
         return {"alerts": [{"id": a["id"], "time": a["iso"], "service": a["service"], "sender": a["sender"],
                             "verdict": a["verdict"], "risk_score": a["score"], "label_ro": a["label"],
-                            "warning_ro": a["warning"]} for a in self.snapshot()]}
+                            "warning_ro": a["warning"], "red_flags": a.get("red_flags") or [],
+                            "scam_type": a.get("scam_type")} for a in self.snapshot()]}
 
     def snapshot(self) -> list[dict]:
         with self.lock:
@@ -169,9 +199,35 @@ def start_status_server(alerts: Alerts, mode: str, port: int):
         def log_message(self, *a, **k):
             pass
 
+        def _clear(self):
+            alerts.conv.clear()
+            body = b'{"ok": true}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_DELETE(self):
+            if self.path.startswith("/conversations"):
+                return self._clear()
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def do_POST(self):
+            if self.path.startswith("/conversations/clear"):
+                return self._clear()
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_GET(self):
             if self.path.startswith("/alerts.json"):
                 body = json.dumps(alerts.feed(), ensure_ascii=False).encode("utf-8")
+                ctype = "application/json; charset=utf-8"
+            elif self.path.startswith("/conversations.json"):
+                body = json.dumps(alerts.conv.feed(), ensure_ascii=False).encode("utf-8")
                 ctype = "application/json; charset=utf-8"
             else:
                 body = render_status(alerts, mode).encode("utf-8")
@@ -224,22 +280,25 @@ class Bridge:
                 q.append("use_llm=false")
             url = self.api + "/api/analyze" + ("?" + "&".join(q) if q else "")
             key = hashlib.sha1(json.dumps([url, sc], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
-            res = self.cache.get(key)
-            if res is None:
-                res = await asyncio.to_thread(_post, url, sc)
-                if not isinstance(res, dict) or "verdict" not in res:
+            full = self.cache.get(key)
+            if full is None:
+                full = await asyncio.to_thread(_post, url, sc)
+                if not isinstance(full, dict) or "verdict" not in full:
                     return {"ok": False}
-                res = {k: res.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning")}
-                self.cache[key] = res
+                self.cache[key] = full
                 while len(self.cache) > 300:
                     self.cache.popitem(last=False)
+            res = {k: full.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning")}
             line = f"[{service}] {res.get('verdict')} {res.get('risk_score')}"
             if self.last_line.get(service) != line:        # service, verdict, score only
                 self.last_line[service] = line
                 print(line, flush=True)
             who = sender.get("name") or sender.get("address") or "necunoscut"
             self.alerts.add(service, str(who)[:60], str(res.get("verdict")), res.get("risk_score"),
-                            str((res.get("warning") or {}).get("ro") or ""), str((res.get("label") or {}).get("ro") or ""), key)
+                            str((res.get("warning") or {}).get("ro") or ""), str((res.get("label") or {}).get("ro") or ""), key,
+                            full.get("red_flags"), full.get("scam_type"))
+            cid = hashlib.sha1((service + "|" + str(who)).encode("utf-8")).hexdigest()[:16]
+            self.alerts.conv.add(cid, service, str(who)[:60], full)
             return {"ok": True, "known": known, "result": res}
         except Exception:
             return {"ok": False}

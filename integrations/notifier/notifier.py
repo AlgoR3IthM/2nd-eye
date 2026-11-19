@@ -41,6 +41,48 @@ TITLES = {
     "SCAM": "\U0001F534 ✖ Pare o țeăpă! Nu răspundeți",
 }
 BUTTON = "Am înțeles"
+OPEN_BUTTON = "Deschide în 2nd Eye"
+WEB_URL = "http://localhost:8000"
+
+# red flag code -> (icon, plain Romanian words)
+FLAGS = {
+    "RF_PAYMENT_REQUEST": ("\U0001F4B8", "Cere bani"),
+    "RF_CODE_REQUEST": ("\U0001F522", "Cere un cod"),
+    "RF_DATA_REQUEST": ("\U0001F4B3", "Cere date personale sau de card"),
+    "RF_REMOTE_ACCESS": ("\U0001F5A5", "Vrea acces la calculator/telefon"),
+    "RF_SUSPICIOUS_CONTACT": ("\U0001F517", "Link sau adresă necunoscută"),
+    "RF_NEW_NUMBER": ("\U0001F4F1", "Număr nou care se dă drept cineva drag"),
+    "RF_SECRECY": ("\U0001F92B", "Vă cere să păstrați secretul"),
+    "RF_TOO_GOOD": ("\U0001F381", "Prea frumos ca să fie adevărat"),
+    "RF_IMPERSONATION": ("\U0001F3AD", "Se dă drept o firmă sau instituție"),
+    "RF_URGENCY": ("⏰", "Vă grăbește"),
+    "RF_THREAT": ("⚠", "Vă amenință"),
+    "RF_EMOTIONAL_PRESSURE": ("\U0001F494", "Vă emoționează ca să cedați"),
+    "RF_CHANNEL_SWITCH": ("\U0001F504", "Vrea să vorbiți pe altă aplicație"),
+}
+
+
+def _flag_codes(alert):
+    """red_flags may be missing, a list of codes, or a list of dicts with a code/id field. Never raises."""
+    out = []
+    try:
+        for f in alert.get("red_flags") or []:
+            c = f if isinstance(f, str) else (f.get("code") or f.get("id") or f.get("flag")) if isinstance(f, dict) else None
+            if c and str(c) not in out:
+                out.append(str(c))
+    except Exception:
+        pass
+    return out
+
+
+def _score(alert):
+    try:
+        s = alert.get("score")
+        if s is None:
+            return None
+        return max(0, min(100, int(round(float(s)))))
+    except Exception:
+        return None
 
 
 # ---------- icons (pure Python PNG, no Pillow needed) ----------
@@ -216,33 +258,115 @@ class Overlay:
         w.overrideredirect(True)
         w.configure(bg=colour)
         w.attributes("-topmost", True)
-        card_w = max(520, min(960, int(sw * 0.6)))
+        card_w = max(520, min(1000, int(sw * 0.66)))
+        small = sh < 900  # e.g. 1366x768: tighter spacing and smaller icon
         inner = tk.Frame(w, bg="white")
         inner.pack(padx=8, pady=8, fill="both", expand=True)  # 8 px coloured border
-        wrap = card_w - 120
+        wrap = card_w - 100
         total = self.done + 1 + len(self.pending)
 
-        top = tk.Frame(inner, bg="white")
-        top.pack(pady=(24, 8))
-        cv = tk.Canvas(top, width=120, height=120, bg="white", highlightthickness=0)
-        cv.create_oval(4, 4, 116, 116, fill=colour, outline=colour)
-        cv.create_text(60, 62, text=self.GLYPH[verdict], fill="white", font=("Segoe UI Symbol", -72, "bold"))
+        # scrollable body (only scrolls if it does not fit); buttons and footer stay fixed below it
+        body_cv = tk.Canvas(inner, bg="white", highlightthickness=0, width=card_w - 16)
+        sb = tk.Scrollbar(inner, orient="vertical", command=body_cv.yview)
+        body = tk.Frame(body_cv, bg="white")
+        body_cv.create_window((0, 0), window=body, anchor="nw", width=card_w - 16)
+        body_cv.configure(yscrollcommand=sb.set)
+
+        ic = 84 if small else 120
+        top = tk.Frame(body, bg="white")
+        top.pack(pady=(14 if small else 24, 4))
+        cv = tk.Canvas(top, width=ic, height=ic, bg="white", highlightthickness=0)
+        cv.create_oval(4, 4, ic - 4, ic - 4, fill=colour, outline=colour)
+        cv.create_text(ic // 2, ic // 2 + 2, text=self.GLYPH[verdict], fill="white",
+                       font=("Segoe UI Symbol", -int(ic * 0.6), "bold"))
         cv.pack()
-        tk.Label(inner, text=f"{self.GLYPH[verdict]} {TITLE_PLAIN[verdict]}", bg="white", fg=colour,
-                 font=("Segoe UI", -38, "bold"), wraplength=wrap, justify="center").pack(padx=40, pady=(8, 8))
+        tk.Label(body, text=f"{self.GLYPH[verdict]} {TITLE_PLAIN[verdict]}", bg="white", fg=colour,
+                 font=("Segoe UI", -34 if small else -38, "bold"), wraplength=wrap,
+                 justify="center").pack(padx=30, pady=(4, 6))
+
+        # (b) score + bar marked at 25 and 50
+        score = _score(alert)
+        if score is not None:
+            srow = tk.Frame(body, bg="white")
+            srow.pack(pady=(2, 6))
+            tk.Label(srow, text=f"Scor {score}/100", bg="white", fg=colour,
+                     font=("Segoe UI", -30, "bold")).pack(side="left", padx=(0, 16))
+            bw, bh = min(460, wrap - 260), 30
+            bar = tk.Canvas(srow, width=bw + 4, height=bh + 22, bg="white", highlightthickness=0)
+            bar.create_rectangle(2, 2, bw + 2, bh + 2, fill="#E6E6E6", outline="#9E9E9E")
+            if score > 0:
+                bar.create_rectangle(2, 2, 2 + bw * score / 100, bh + 2, fill=colour, outline=colour)
+            for m in (25, 50):
+                x = 2 + bw * m / 100
+                bar.create_line(x, 0, x, bh + 6, fill="#212121", width=3)
+                bar.create_text(x, bh + 14, text=str(m), fill="#212121", font=("Segoe UI", -14, "bold"))
+            bar.pack(side="left")
+
+        # (c) red flag chips, wrapped into rows
+        codes = _flag_codes(alert)
+        if codes:
+            chips = tk.Frame(body, bg="white")
+            chips.pack(padx=24, pady=(4, 6))
+            row, used = None, wrap
+            for c in codes:
+                icon, words = FLAGS.get(c, ("⚠", c.replace("RF_", "").replace("_", " ").capitalize()))
+                lbl = tk.Label(chips, text=f"{icon}  {words}", bg=colour, fg="white",
+                               font=("Segoe UI Emoji", -24, "bold"), padx=14, pady=6)
+                need = lbl.winfo_reqwidth() + 12
+                if row is None or used + need > wrap:
+                    row = tk.Frame(chips, bg="white")
+                    row.pack(pady=4)
+                    used = 0
+                lbl.destroy()
+                tk.Label(row, text=f"{icon}  {words}", bg=colour, fg="white",
+                         font=("Segoe UI Emoji", -24, "bold"), padx=14, pady=6).pack(side="left", padx=6)
+                used += need
+
         svc = SERVICES.get(str(alert.get("service", "")).lower(), str(alert.get("service", "")).title())
         sender = alert.get("sender", "") or "necunoscut"
-        tk.Label(inner, text=f"Mesaj pe {svc} de la {sender}", bg="white", fg="#222222",
-                 font=("Segoe UI", -26), wraplength=wrap, justify="center").pack(padx=40, pady=(4, 8))
-        tk.Label(inner, text=alert.get("warning_ro", ""), bg="white", fg="#111111",
-                 font=("Segoe UI", -26), wraplength=wrap, justify="center").pack(padx=40, pady=(8, 16))
-        self.btn = tk.Button(inner, text=BUTTON, font=("Segoe UI", -30, "bold"), bg="#BDBDBD", fg="#757575",
+        tk.Label(body, text=f"Mesaj pe {svc} de la {sender}", bg="white", fg="#222222",
+                 font=("Segoe UI", -24 if small else -26), wraplength=wrap,
+                 justify="center").pack(padx=30, pady=(4, 4))
+        tk.Label(body, text=alert.get("warning_ro", ""), bg="white", fg="#111111",
+                 font=("Segoe UI", -24 if small else -26), wraplength=wrap,
+                 justify="center").pack(padx=30, pady=(4, 8))
+
+        body.update_idletasks()
+        bh_req = body.winfo_reqheight()
+        btn_h = 150  # buttons + footer + borders, roughly
+        max_body = sh - 40 - btn_h
+        if bh_req > max_body:
+            body_cv.configure(height=max_body)
+            sb.pack(side="right", fill="y")
+
+            def _wheel(ev, c=body_cv):
+                try:
+                    c.yview_scroll(int(-ev.delta / 120), "units")
+                except Exception:
+                    pass
+            w.bind_all("<MouseWheel>", _wheel)
+        else:
+            body_cv.configure(height=bh_req)
+        body_cv.configure(scrollregion=(0, 0, card_w - 16, bh_req))
+
+        bottom = tk.Frame(inner, bg="white")
+        bottom.pack(side="bottom", fill="x")
+        body_cv.pack(side="top", fill="both", expand=True)
+
+        brow = tk.Frame(bottom, bg="white")
+        brow.pack(pady=(6, 4))
+        self.btn = tk.Button(brow, text=BUTTON, font=("Segoe UI", -30, "bold"), bg="#BDBDBD", fg="#757575",
                              disabledforeground="#757575", activebackground=colour, activeforeground="white",
-                             relief="flat", padx=48, pady=14, state="disabled", takefocus=0,
+                             relief="flat", padx=40, pady=10 if small else 14, state="disabled", takefocus=0,
                              command=self._click)
-        self.btn.pack(pady=(4, 8))
-        foot = tk.Frame(inner, bg="white")
-        foot.pack(fill="x", padx=20, pady=(4, 12))
+        self.btn.pack(side="left", padx=10)
+        self.open_btn = tk.Button(brow, text=OPEN_BUTTON, font=("Segoe UI", -26, "bold"), bg="#1E5EA8",
+                                  fg="white", activebackground="#174A85", activeforeground="white",
+                                  relief="flat", padx=28, pady=12 if small else 16, takefocus=0,
+                                  command=self._open_web)
+        self.open_btn.pack(side="left", padx=10)
+        foot = tk.Frame(bottom, bg="white")
+        foot.pack(fill="x", padx=20, pady=(2, 8))
         tk.Label(foot, text=ATTRIBUTION, bg="white", fg="#666666", font=("Segoe UI", -16)).pack(side="left")
         if total > 1:
             tk.Label(foot, text=f"{self.done + 1} din {total}", bg="white", fg="#666666",
@@ -298,6 +422,13 @@ class Overlay:
     def _click(self):
         if self.active:
             self.dismiss()
+
+    def _open_web(self):
+        try:
+            import webbrowser
+            webbrowser.open(WEB_URL)
+        except Exception:
+            pass
 
     def dismiss(self):
         if self.win is None:
@@ -365,8 +496,11 @@ def poll_loop(source, interval, emit):
 SAMPLES = [
     {"verdict": "SCAM", "service": "whatsapp", "sender": "Mama (număr nou)",
      "warning_ro": "Aceasta pare o țeăpă. Nu trimiteți bani și nu răspundeți. "
-                   "Sunați-vă fiul sau fiica la numărul pe care îl știți."},
+                   "Sunați-vă fiul sau fiica la numărul pe care îl știți.",
+     "score": 82, "red_flags": ["RF_NEW_NUMBER", "RF_PAYMENT_REQUEST", "RF_URGENCY", "RF_SECRECY",
+                                "RF_EMOTIONAL_PRESSURE"]},
     {"verdict": "SUSPICIOUS", "service": "gmail", "sender": "Banca Exemplu",
+     "score": 41, "red_flags": ["RF_IMPERSONATION", "RF_DATA_REQUEST", "RF_SUSPICIOUS_CONTACT"],
      "warning_ro": "Mesajul cere date personale. Nu apăsați pe linkuri. "
                    "Sunați banca la numărul de pe card."},
 ]

@@ -354,6 +354,32 @@ VERDICT_UI = {
 ORDER = {"SCAM": 0, "SUSPICIOUS": 1, "SAFE": 2}
 
 
+class Conversations:
+    """Last analysed threads WITH the full API result, for the local web UI. Memory only: never on disk,
+    never printed. One entry per thread, replaced on re-analysis; served only on 127.0.0.1."""
+
+    def __init__(self, keep: int = 40) -> None:
+        self.items: "collections.OrderedDict[str, dict]" = collections.OrderedDict()
+        self.keep = keep
+        self.lock = threading.Lock()
+
+    def add(self, cid: str, service: str, sender: str, result: dict, quiet: bool = False) -> None:
+        with self.lock:
+            self.items.pop(cid, None)
+            self.items[cid] = {"id": cid, "service": service, "sender": sender,
+                               "time": time.strftime("%Y-%m-%dT%H:%M:%S"), "result": result, "quiet": quiet}
+            while len(self.items) > self.keep:
+                self.items.popitem(last=False)
+
+    def feed(self) -> dict:
+        with self.lock:
+            return {"conversations": list(reversed(self.items.values()))}
+
+    def clear(self) -> None:
+        with self.lock:
+            self.items.clear()
+
+
 class Alerts:
     def __init__(self, keep: int = 100) -> None:
         self.items: "collections.OrderedDict[str, dict]" = collections.OrderedDict()
@@ -361,9 +387,10 @@ class Alerts:
         self.lock = threading.Lock()
         self.started = time.strftime("%H:%M:%S")
         self.checked = 0
+        self.conv = Conversations()
 
     def add(self, thread_key: str, sender: str, verdict: str, score, warning: str, label: str, state: str,
-            when: str | None = None) -> None:
+            when: str | None = None, red_flags=None, scam_type=None) -> None:
         """when = local ISO time of the newest mail in the thread, so the notifier does not replay old mail."""
         aid = hashlib.sha1("|".join([SERVICE, thread_key, verdict, state]).encode("utf-8")).hexdigest()[:16]
         with self.lock:
@@ -372,14 +399,16 @@ class Alerts:
             self.items.pop(thread_key, None)
             self.items[thread_key] = {"service": SERVICE, "sender": sender, "verdict": verdict, "score": score,
                                       "warning": warning, "label": label, "time": time.strftime("%H:%M:%S"),
-                                      "id": aid, "iso": when or time.strftime("%Y-%m-%dT%H:%M:%S")}
+                                      "id": aid, "iso": when or time.strftime("%Y-%m-%dT%H:%M:%S"),
+                                      "red_flags": list(red_flags or []), "scam_type": scam_type}
             while len(self.items) > self.keep:
                 self.items.popitem(last=False)
 
     def feed(self) -> dict:
         return {"alerts": [{"id": a["id"], "time": a["iso"], "service": a["service"], "sender": a["sender"],
                             "verdict": a["verdict"], "risk_score": a["score"], "label_ro": a["label"],
-                            "warning_ro": a["warning"]} for a in self.snapshot()]}
+                            "warning_ro": a["warning"], "red_flags": a.get("red_flags") or [],
+                            "scam_type": a.get("scam_type")} for a in self.snapshot()]}
 
     def snapshot(self) -> list[dict]:
         with self.lock:
@@ -419,7 +448,39 @@ def start_status_server(alerts: Alerts, info: dict, port: int):
         def log_message(self, *a, **k):
             pass
 
+        def _clear(self):
+            alerts.conv.clear()
+            body = b'{"ok": true}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_DELETE(self):
+            if self.path.startswith("/conversations"):
+                return self._clear()
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def do_POST(self):
+            if self.path.startswith("/conversations/clear"):
+                return self._clear()
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_GET(self):
+            if self.path.startswith("/conversations.json"):
+                body = json.dumps(alerts.conv.feed(), ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if self.path.startswith("/alerts.json"):
                 if not info.get("ready", True):     # start-up scan still running: notifier keeps waiting
                     self.send_response(503)
@@ -491,8 +552,8 @@ class Analyzer:
             return "skip"
         url = analyze_url(self.api, known, self.use_llm)
         key = hashlib.sha1(json.dumps([url, sc], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
-        res = self.cache.get(key)
-        if res is None:
+        raw = self.cache.get(key)
+        if raw is None:
             raw = post_json(url, sc)
             if not isinstance(raw, dict) or "verdict" not in raw:
                 if not self.api_down:
@@ -500,10 +561,10 @@ class Analyzer:
                 self.api_down = True
                 return "retry"
             self.api_down = False
-            res = {k: raw.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning", "red_flags")}
-            self.cache[key] = res
+            self.cache[key] = raw
             while len(self.cache) > 500:
                 self.cache.popitem(last=False)
+        res = {k: raw.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning", "red_flags")}
         flags = [f.replace("RF_", "") for f in (res.get("red_flags") or [])]
         # Live e-mail is not the challenge's fictional world: almost every real newsletter has links and a
         # company name that are not on the 5-entry official catalog, so link + company name alone scores 25-40.
@@ -515,12 +576,13 @@ class Analyzer:
         say(f"[{SERVICE}] {res.get('verdict')} {res.get('risk_score')} #{short(thread_key)}"
             + (" (known)" if known else "") + (" " + ",".join(flags) if flags else "")
             + (" (quiet: nothing is asked)" if quiet else ""))
+        who = sc["sender"].get("name") or sc["sender"].get("address") or "necunoscut"
+        self.alerts.conv.add(short(thread_key), SERVICE, str(who)[:60], raw, quiet)
         if quiet:
             return "ok"
-        who = sc["sender"].get("name") or sc["sender"].get("address") or "necunoscut"
         self.alerts.add(thread_key, str(who)[:60], str(res.get("verdict")), res.get("risk_score"),
                         str((res.get("warning") or {}).get("ro") or ""), str((res.get("label") or {}).get("ro") or ""),
-                        key, newest_local_iso(msgs))
+                        key, newest_local_iso(msgs), raw.get("red_flags"), raw.get("scam_type"))
         return "ok"
 
 
