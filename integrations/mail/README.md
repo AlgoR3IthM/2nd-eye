@@ -56,4 +56,8 @@ these setup steps in Romanian and English and exits.
 - Google Workspace (school / company) accounts: the admin may have disabled IMAP or app passwords.
 - Gmail only (uses Gmail's `X-GM-THRID` extension). Polling, not push: up to `--interval` seconds delay.
 - Attachments and images are not analysed; only the first ~1.5 MB of each message is fetched.
-- Alerts appear for scam mails found in the start-up scan too (last N days), not only new ones.
+- The start-up scan (last N days) fills the status page, but `/alerts.json` answers 503 until that scan is done and each
+  alert's `time` is the date of the newest mail in the thread, so the notifier (which skips alerts older than
+  15 minutes on its first read) does not pop up for old mail. New mail after start-up does pop up.
+- The detector was tuned on SMS / chat scenarios: newsletters and notification mails with links from unknown
+  senders often come out SUSPICIOUS. Add such senders to `trusted.txt` if they are noisy.

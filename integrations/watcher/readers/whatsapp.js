@@ -88,7 +88,8 @@
     let unknown = 0;
     // counts only, to check the direction signals on a live account (no text, no ids)
     const c = { rows: 0, container: 0, noText: 0, idTrue: 0, idFalse: 0, idOther: 0, noId: 0,
-                clsOut: 0, clsIn: 0, tailOut: 0, tailIn: 0, ticks: 0, byAuthor: 0, byPosition: 0, byOther: 0 };
+                clsOut: 0, clsIn: 0, tailOut: 0, tailIn: 0, ticks: 0, byAuthor: 0, byPosition: 0, byOther: 0,
+                authors: 0, decidedBy: 0 };
     const title = openTitle();
     const box = chat.getBoundingClientRect();
     for (const row of h.qAll(SEL.row, chat)) {
@@ -105,11 +106,51 @@
       if (row.querySelector("[data-icon='tail-in']")) c.tailIn++;
       if (row.querySelector("[data-icon*='check'],[data-icon*='status-time'],[data-icon='msg-time']")) c.ticks++;
       const d = direction(row, title, box, c);
+      rows.push({ from: d, text, author: authorOf(row), side: sideOf(row, box), tail: row.querySelector("[data-icon='tail-out']") ? "out" : row.querySelector("[data-icon='tail-in']") ? "in" : "" });
+    }
+    // Decide per AUTHOR, not per message, using every signal the thread offers:
+    //  a. an author whose name is the chat's number is the other person (then every other author is her);
+    //  b. otherwise the author whose bubbles sit on the right half is her;
+    //  c. otherwise the author whose group starts with an outgoing bubble tail is her.
+    const authors = [...new Set(rows.map((m) => m.author).filter(Boolean))];
+    const them = new Set(), her = new Set();
+    const tDigits = digits(title);
+    for (const a of authors) if (tDigits.length >= 6 && digits(a).length >= 6 && digits(a).slice(-9) === tDigits.slice(-9)) them.add(a);
+    if (them.size) { for (const a of authors) if (!them.has(a)) her.add(a); c.decidedBy = 1; }
+    else {
+      for (const a of authors) {
+        const s = rows.filter((m) => m.author === a && m.side != null).map((m) => m.side);
+        if (s.length) { (s.reduce((x, y) => x + y, 0) / s.length > 0.5 ? her : them).add(a); c.decidedBy = 2; }
+      }
+      for (const a of authors) {
+        if (her.has(a) || them.has(a)) continue;
+        const tails = rows.filter((m) => m.author === a && m.tail);
+        if (tails.length) { (tails.filter((m) => m.tail === "out").length * 2 > tails.length ? her : them).add(a); c.decidedBy = 3; }
+      }
+    }
+    c.authors = authors.length;
+    const out = [];
+    for (const m of rows) {
+      let d = m.author ? (her.has(m.author) ? "reader" : them.has(m.author) ? "sender" : null) : null;
+      if (!d) d = m.side != null ? (m.side > 0.5 ? "reader" : "sender") : null;
       if (!d) { unknown++; continue; }          // direction unknown: never guess "sender" for her own words
-      rows.push({ from: d, text });
+      out.push({ from: d, text: m.text });
     }
     SB.waDir = { unknown, c };
-    return rows;
+    return out;
+  }
+
+  function authorOf(row) {
+    const pre = row.querySelector && row.querySelector("[data-pre-plain-text]");
+    const m = pre && /\]\s*(.*?):\s*$/.exec(pre.getAttribute("data-pre-plain-text") || "");
+    return m && m[1] ? m[1].trim() : "";
+  }
+  // horizontal centre of the message text as a fraction of the conversation width (0 = left, 1 = right), or null
+  function sideOf(row, box) {
+    const t = h.q1(SEL.text, row);
+    if (!t || !box || !box.width) return null;
+    const r = t.getBoundingClientRect();
+    return r.width ? (r.left + r.width / 2 - box.left) / box.width : null;
   }
 
   function findRow(title) {

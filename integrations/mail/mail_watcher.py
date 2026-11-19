@@ -362,7 +362,9 @@ class Alerts:
         self.started = time.strftime("%H:%M:%S")
         self.checked = 0
 
-    def add(self, thread_key: str, sender: str, verdict: str, score, warning: str, label: str, state: str) -> None:
+    def add(self, thread_key: str, sender: str, verdict: str, score, warning: str, label: str, state: str,
+            when: str | None = None) -> None:
+        """when = local ISO time of the newest mail in the thread, so the notifier does not replay old mail."""
         aid = hashlib.sha1("|".join([SERVICE, thread_key, verdict, state]).encode("utf-8")).hexdigest()[:16]
         with self.lock:
             if thread_key not in self.items:
@@ -370,7 +372,7 @@ class Alerts:
             self.items.pop(thread_key, None)
             self.items[thread_key] = {"service": SERVICE, "sender": sender, "verdict": verdict, "score": score,
                                       "warning": warning, "label": label, "time": time.strftime("%H:%M:%S"),
-                                      "id": aid, "iso": time.strftime("%Y-%m-%dT%H:%M:%S")}
+                                      "id": aid, "iso": when or time.strftime("%Y-%m-%dT%H:%M:%S")}
             while len(self.items) > self.keep:
                 self.items.popitem(last=False)
 
@@ -419,6 +421,11 @@ def start_status_server(alerts: Alerts, info: dict, port: int):
 
         def do_GET(self):
             if self.path.startswith("/alerts.json"):
+                if not info.get("ready", True):     # start-up scan still running: notifier keeps waiting
+                    self.send_response(503)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
                 body = json.dumps(alerts.feed(), ensure_ascii=False).encode("utf-8")
                 ctype = "application/json; charset=utf-8"
             else:
@@ -446,6 +453,14 @@ def post_json(url: str, body: dict, timeout: float = 120) -> dict | None:
             return json.loads(r.read().decode("utf-8"))
     except Exception:
         return None
+
+
+def newest_local_iso(msgs: list[dict]) -> str | None:
+    dates = [m["date"] for m in msgs if m.get("date")]
+    if not dates:
+        return None
+    d = min(max(dates), dt.datetime.now(dt.timezone.utc))
+    return d.astimezone().strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def analyze_url(api: str, known: bool, use_llm: bool) -> str:
@@ -485,16 +500,27 @@ class Analyzer:
                 self.api_down = True
                 return "retry"
             self.api_down = False
-            res = {k: raw.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning")}
+            res = {k: raw.get(k) for k in ("verdict", "risk_score", "first_alert", "label", "warning", "red_flags")}
             self.cache[key] = res
             while len(self.cache) > 500:
                 self.cache.popitem(last=False)
+        flags = [f.replace("RF_", "") for f in (res.get("red_flags") or [])]
+        # Live e-mail is not the challenge's fictional world: almost every real newsletter has links and a
+        # company name that are not on the 5-entry official catalog, so link + company name alone scores 25-40.
+        # For the live watcher we therefore warn only when the mail ASKS her for something (money, a code,
+        # card or personal data, remote access). The detector's verdict itself is unchanged; files, pasted
+        # text and the dashboard are scored exactly as before.
+        asks = {"RF_DATA_REQUEST", "RF_CODE_REQUEST", "RF_PAYMENT_REQUEST", "RF_REMOTE_ACCESS"}
+        quiet = res.get("verdict") in ("SUSPICIOUS", "SCAM") and not (asks & set(res.get("red_flags") or []))
         say(f"[{SERVICE}] {res.get('verdict')} {res.get('risk_score')} #{short(thread_key)}"
-            + (" (known)" if known else ""))
+            + (" (known)" if known else "") + (" " + ",".join(flags) if flags else "")
+            + (" (quiet: nothing is asked)" if quiet else ""))
+        if quiet:
+            return "ok"
         who = sc["sender"].get("name") or sc["sender"].get("address") or "necunoscut"
         self.alerts.add(thread_key, str(who)[:60], str(res.get("verdict")), res.get("risk_score"),
                         str((res.get("warning") or {}).get("ro") or ""), str((res.get("label") or {}).get("ro") or ""),
-                        key)
+                        key, newest_local_iso(msgs))
         return "ok"
 
 
@@ -625,7 +651,7 @@ def imap_date(days: int) -> str:
 # ------------------------------------------------------------------ main loop
 def run(a, address: str, password: str) -> None:
     alerts = Alerts()
-    info = {"state": "pornire"}
+    info = {"state": "pornire", "ready": False}
     srv = start_status_server(alerts, info, a.status_port)
     say(f"Status page: http://127.0.0.1:{a.status_port}  (alerts: /alerts.json)")
     g = Gmail(address, password)
@@ -694,6 +720,7 @@ def run(a, address: str, password: str) -> None:
                     del msgs
                     if r != "retry":
                         pending.discard(t)
+                info["ready"] = True
                 if a.once:
                     break
             except LoginError:
