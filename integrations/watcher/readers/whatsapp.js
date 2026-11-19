@@ -29,7 +29,7 @@
     unread: "[aria-label*='unread' i],[aria-label*='necitit' i],[data-testid='icon-unread-count']",
   };
   // context-menu entry, English and Romanian interface
-  const MENU_UNREAD = /^(mark as unread|marcheaz[ăa] ca necitit[ăa]?)$/i;
+  const MENU_UNREAD = /^\s*(mark as unread|marcheaz[ăa]\s+(ca|drept)\s+necitit[ăa]?)\s*$/i;
   const MENU_ITEMS = "[role='application'] li, [role='menu'] [role='menuitem'], [role='menuitem'], li[role='button'], li";
 
   const is = (el, list) => list.some((s) => { try { return el.matches(s) || !!el.querySelector(s); } catch (_) { return false; } });
@@ -106,8 +106,11 @@
       if (row.querySelector("[data-icon='tail-in']")) c.tailIn++;
       if (row.querySelector("[data-icon*='check'],[data-icon*='status-time'],[data-icon='msg-time']")) c.ticks++;
       const d = direction(row, title, box, c);
-      rows.push({ from: d, text, author: authorOf(row), side: sideOf(row, box), tail: row.querySelector("[data-icon='tail-out']") ? "out" : row.querySelector("[data-icon='tail-in']") ? "in" : "" });
+      rows.push({ from: d, text, author: authorOf(row), side: sideOf(row, box), tick: hasTick(row), tail: row.querySelector("[data-icon='tail-out']") ? "out" : row.querySelector("[data-icon='tail-in']") ? "in" : "" });
     }
+    // Strongest signal: only HER messages carry a delivery status (clock / one tick / two ticks).
+    // Any author who has a ticked message is her; any ticked row is hers, whatever else says.
+    const tickAuthors = new Set(rows.filter((m) => m.tick && m.author).map((m) => m.author));
     // Decide per AUTHOR, not per message, using every signal the thread offers:
     //  a. an author whose name is the chat's number is the other person (then every other author is her);
     //  b. otherwise the author whose bubbles sit on the right half is her;
@@ -116,7 +119,9 @@
     const them = new Set(), her = new Set();
     const tDigits = digits(title);
     for (const a of authors) if (tDigits.length >= 6 && digits(a).length >= 6 && digits(a).slice(-9) === tDigits.slice(-9)) them.add(a);
+    for (const a of tickAuthors) { her.add(a); them.delete(a); }
     if (them.size) { for (const a of authors) if (!them.has(a)) her.add(a); c.decidedBy = 1; }
+    else if (tickAuthors.size) { for (const a of authors) if (!her.has(a)) them.add(a); c.decidedBy = 4; }
     else {
       for (const a of authors) {
         const s = rows.filter((m) => m.author === a && m.side != null).map((m) => m.side);
@@ -130,8 +135,12 @@
     }
     c.authors = authors.length;
     const out = [];
+    const anyTick = rows.some((m) => m.tick);
     for (const m of rows) {
-      let d = m.author ? (her.has(m.author) ? "reader" : them.has(m.author) ? "sender" : null) : null;
+      let d = m.tick ? "reader" : null;
+      if (!d) d = m.author ? (her.has(m.author) ? "reader" : them.has(m.author) ? "sender" : null) : null;
+      // the thread shows ticks on her messages, so an un-ticked row with no author is the other person's
+      if (!d && anyTick) d = "sender";
       if (!d) d = m.side != null ? (m.side > 0.5 ? "reader" : "sender") : null;
       if (!d) { unknown++; continue; }          // direction unknown: never guess "sender" for her own words
       out.push({ from: d, text: m.text });
@@ -139,6 +148,11 @@
     SB.waDir = { unknown, c };
     return out;
   }
+
+  const TICK = "[data-icon*='check'],[data-icon*='msg-time'],[data-icon*='status-time'],[data-icon*='dblcheck'],"
+             + "[aria-label*='Delivered' i],[aria-label*='Read' i][data-icon],[aria-label*='Sent' i][data-icon],"
+             + "[aria-label*='Livrat' i],[aria-label*='Citit' i],[aria-label*='Trimis' i],[aria-label*='Pending' i]";
+  function hasTick(row) { try { return !!(row.querySelector && row.querySelector(TICK)); } catch (_) { return false; } }
 
   function authorOf(row) {
     const pre = row.querySelector && row.querySelector("[data-pre-plain-text]");
@@ -222,10 +236,18 @@
                    outgoing: conv.rows.filter((m) => m.from === "reader").length,
                    unknownDir: (SB.waDir && SB.waDir.unknown) || 0,
                    dirCounts: (SB.waDir && SB.waDir.c) || null };
+    // Always put it back to unread (any verdict), unless the newest message is her own reply.
+    const want = conv.wasUnread || !it.previewMine;
+    if (want && conv.opened) { await hostInput({ type: "key", key: "Control+Alt+Shift+U" }); await sleep(400); }
     await pressEscape();
     await sleep(500);
     note.closed = !h.q1(SEL.chat);
-    if (conv.wasUnread && (verdict === "SAFE" || verdict === null)) note.restored = await markUnread(it.address);
+    if (want) {
+      const row = findRow(it.address);
+      note.restored = !!(row && h.hasUnread(row, LIST.unread));
+      if (!note.restored) note.restored = await markUnread(it.address);
+      if (!note.restored) note.menu = SB.waMenu || "";
+    }
     if (SB.call) SB.call("__sbNote", note);                      // counts and yes/no only
   }
 
@@ -238,6 +260,9 @@
       const hit = Array.from(document.querySelectorAll(MENU_ITEMS)).find((e) => MENU_UNREAD.test(h.text(e)));
       if (hit) { await clickEl(hit); await sleep(300); return true; }
     }
+    // menu labels only (WhatsApp's own interface words, never message text), for the console note
+    SB.waMenu = Array.from(document.querySelectorAll("[role='application'] li, [role='menuitem']"))
+      .map((e) => h.text(e).trim()).filter((t) => t && t.length < 30).slice(0, 10).join("|");
     await pressEscape();                                          // menu item not found: close the menu
     return false;
   }

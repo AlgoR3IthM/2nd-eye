@@ -311,8 +311,8 @@ class Bridge:
                 await page.mouse.click(float(payload["x"]), float(payload["y"]),
                                        button="right" if payload.get("button") == "right" else "left")
                 return True
-            if payload.get("type") == "key" and payload.get("key") == "Escape":
-                await page.keyboard.press("Escape")
+            if payload.get("type") == "key" and payload.get("key") in ("Escape", "Control+Alt+Shift+U"):
+                await page.keyboard.press(payload["key"])   # Escape, or WhatsApp's "mark as unread" shortcut
                 return True
         except Exception:
             pass
@@ -328,7 +328,8 @@ class Bridge:
                   + ("dir_signals=" + ",".join(f"{k}:{int(v)}" for k, v in (payload.get("dirCounts") or {}).items()) + " "
                      if isinstance(payload.get("dirCounts"), dict) else "") +
                   f"was_unread={yn(payload.get('wasUnread'))} closed={yn(payload.get('closed'))} "
-                  f"restored_unread={yn(payload.get('restored'))}", flush=True)
+                  f"restored_unread={yn(payload.get('restored'))}"
+                  + (f" menu=[{str(payload.get('menu'))[:200]}]" if payload.get("menu") else ""), flush=True)
         except Exception:
             pass
         return True
