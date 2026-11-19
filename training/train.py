@@ -77,7 +77,7 @@ def main():
     model = get_peft_model(model, cfg)
     model.print_trainable_parameters()
     args = TrainingArguments(output_dir=str(HERE / "out" / "ckpt"), per_device_train_batch_size=1, gradient_accumulation_steps=a.accum,
-                             num_train_epochs=a.epochs, learning_rate=a.lr, lr_scheduler_type="cosine", warmup_steps=8, bf16=True,
+                             num_train_epochs=a.epochs, learning_rate=a.lr, lr_scheduler_type="cosine", warmup_steps=2, bf16=True,
                              logging_steps=1, save_strategy="no", report_to=[], gradient_checkpointing=True,
                              gradient_checkpointing_kwargs={"use_reentrant": False}, optim="paged_adamw_8bit", weight_decay=0.0,
                              remove_unused_columns=False, dataloader_num_workers=0, seed=0)

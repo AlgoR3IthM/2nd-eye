@@ -2,7 +2,13 @@
 
 ## Run
 
-1. Double-click `run.bat` (starts the LM Studio server, loads the model, starts the API, opens http://localhost:8000).
+**Double-click `START.bat`.** That is all. The first time it sets up what is missing (Python environment, asks for the
+Gmail address and app password, opens a window to link WhatsApp once). Every time it loads the local model, starts the
+detector, the WhatsApp and Gmail watchers and the full-screen alert, and opens http://localhost:8000.
+**`STOP.bat`** stops everything. Logs (verdicts and counts only, never message text) are in `%TEMP%\2ndeye`.
+
+Other ways to start:
+1. `run.bat` starts only the model and the web app (no watchers): use this for the jury's Test Set dashboard.
 2. From a phone on the same Wi-Fi open `http://<laptop-ip>:8000`.
 3. Without the LLM: open `/` and the app still works (rules + link/number checks); the API takes `?use_llm=false`.
 

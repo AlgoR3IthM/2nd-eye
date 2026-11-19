@@ -104,7 +104,7 @@ browser is a later topic. The extension in `integrations/extension/` stays as a 
 
 **Decisions 12:05:** the Telegram forwarding bot is dropped (`integrations/telegram_bot.py` is unused; Telegram Web stays a watcher
 service). Windows autostart is installed with administrator rights. Folder merge with the Live Share workspace happens later.
-The web watcher also ships on Android as a full app, `android-webwatcher/` (owner ANDROID-WEB): WebViews with a desktop user agent
+(Scrapped 16:10: Android is Raul's app; the old `android-webwatcher/` is only in git history.) It was planned as an Android app: WebViews with a desktop user agent
 load the same five services and inject the **same reader files** from `integrations/watcher/readers/`; a JavaScript bridge replaces
 Playwright's binding; a foreground service keeps it running; detection calls the laptop API over Wi-Fi. The teammate's
 `scam-shield-android` notification app is separate and merges later.

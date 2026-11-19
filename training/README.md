@@ -51,3 +51,11 @@ examples) is likely already close; a fine-tune must be judged on validation, sel
 Generator now makes ROMANCE ~28% of scam examples (204 of 730 in the current set): slow threads of 6-10 messages, excuses (offshore, army,
 widower, doctor abroad, ship), late indirect asks (plane ticket, customs on a parcel, frozen account, gift cards, payment apps, crypto
 "investment" with RF_TOO_GOOD), plus affection-only genuine negatives ("mi-e dor de tine", "te iubesc", small favours). Not trained.
+
+## Run outcome (15:00-16:00)
+Training succeeded only in a reduced form: 88 examples (random slice of train.jsonl, ~28% romance), 1 epoch, 11 optimiser steps (accum 8),
+LoRA r16/a32/d0.05, 536 s, peak 9 GB. A full epoch (74 steps) projected to 2.5 h because the GPU is shared with LM Studio. train.py's
+LeanTrainer computes the loss on completion positions only (logged loss is scaled x8 by accumulation: ~15 at step 1 to ~0.86 at step 11,
+i.e. ~1.9 -> ~0.11 per token). Merged, converted and quantised to `training/out/2ndeye-qwen3-4b-ft-Q4_K_M.gguf` (2.5 GB), imported to
+LM Studio (key `qwen3-4b-ft`, folder 2ndeye/qwen3-4b-ft). NOT loaded, NOT compared with the base; dev-set evaluation was stopped
+unfinished at the team's request. No quality claim can be made. Note: an 88-example run is a smoke test, not a proper fine-tune.
