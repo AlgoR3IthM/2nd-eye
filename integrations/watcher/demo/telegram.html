@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="sb-demo" content="telegram"><title>Telegram Web (demo)</title>
+<style>
+body{margin:0;font:16px Segoe UI,Arial,sans-serif;background:#e9edef;display:flex;height:100vh}
+#side{width:290px;background:#fff;border-right:1px solid #ccc;overflow:auto;flex:none}
+.legend{font-size:12px;color:#666;padding:10px;border-top:1px solid #eee}.legend div{margin-bottom:4px}
+.row{display:block;padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;color:inherit;text-decoration:none}
+.row .n{font-weight:600;display:block}.row .p{display:block;color:#555;font-size:14px}
+.unreadmark{background:#25d366;color:#fff;border-radius:10px;padding:0 7px;font-size:12px;float:right}
+#side h1{font-size:15px;margin:0;padding:12px;background:#222;color:#fff}
+#list button{display:block;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #eee;background:#fff;font:inherit;cursor:pointer}
+#list button small{display:block;color:#666;margin-top:2px}
+#list button.on{background:#d9fdd3}
+.pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:70%;padding:8px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 1px #0002}
+.out{align-self:flex-end;background:#d9fdd3}
+.hd{padding:12px 16px;background:#f0f2f5;font-weight:600;border-bottom:1px solid #ccc}
+.bubble{display:flex}.bubble.is-out{justify-content:flex-end}.time{color:#888;font-size:12px;margin-left:8px}
+</style></head><body>
+<div id="side"><h1>Telegram Web (demo) - conversații de probă</h1><div id="list" class="chatlist"></div><div class="legend"><div>1. Radu Investiții: necunoscut (bara 'Adaugă la contacte')</div><div>2. Bunicul Ion: contact, discuție obișnuită</div><div>3. Sorin (cumnatul): contact care cere acces la distanță</div></div></div>
+<div class="chat active pane"><div class="chat-info hd"><span class="peer-title" id="t"></span></div><div id="acc"></div><div class="bubbles-inner msgs" id="m"></div></div>
+<script>
+const CONVS=[{"label": "Radu Investiții", "name": "Radu Investiții", "stranger": true, "note": "necunoscut (bara 'Adaugă la contacte')", "msgs": [["s", "Bună ziua! Echipa noastră de trading crypto garantează profit de 8% pe săptămână."], ["s", "Transferați 1.000 lei în portofelul nostru și vedeți banii crescând. Locurile sunt limitate, decideți azi."]]}, {"label": "Bunicul Ion", "name": "Bunicul Ion", "note": "contact, discuție obișnuită", "msgs": [["s", "Ce faci, puișor? Am pus ghivece noi pe balcon."], ["r", "Frumos! Trimite o poză."], ["s", "Mâine, că azi nu am bateria încărcată."]]}, {"label": "Sorin (cumnatul)", "name": "Sorin (cumnatul)", "note": "contact care cere acces la distanță", "msgs": [["s", "Salut, am o aplicație care îți face telefonul mai rapid."], ["s", "Instalează AnyDesk și spune-mi codul de nouă cifre, intru eu pe telefonul tău și rezolv totul."]]}];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function ROW(c,p){const r=el("a","row chatlist-chat");const t=el("div","peer-title n",c.name);r.appendChild(t);
+r.appendChild(el("div","user-last-message p",p));r.appendChild(el("div","badge unread unreadmark","1"));return r}
+function READ(r){r.querySelectorAll(".unreadmark").forEach(e=>e.remove())}
+let n=0;function render(c){document.getElementById("t").textContent=c.name;
+const acc=document.getElementById("acc");acc.replaceChildren();
+if(c.stranger){const b=el("button","","Adaugă la contacte");b.type="button";acc.appendChild(b);const b2=el("button","","Raportează spam");b2.type="button";acc.appendChild(b2)}
+const m=document.getElementById("m");m.replaceChildren();
+c.msgs.forEach(([w,x])=>{n++;const bub=el("div","bubble "+(w=="r"?"is-out":"is-in"));bub.setAttribute("data-mid",n);
+const bc=el("div","bubble-content b"+(w=="r"?" out":""));const ms=el("div","message",x);ms.appendChild(el("span","time","10:15"));bc.appendChild(ms);bub.appendChild(bc);m.appendChild(bub)})}
+function lastS(c){for(let i=c.msgs.length-1;i>=0;i--)if(c.msgs[i][0]=="s")return c.msgs[i][1];return ""}
+const list=document.getElementById("list");
+const ROWS=CONVS.map((c)=>{const r=ROW(c,lastS(c));r.addEventListener("click",(e)=>{e.preventDefault();READ(r);render(c)});list.appendChild(r);return r});
+const q=location.search.match(/c=([0-9])/);if(q)ROWS[+q[1]].click();
+</script></body></html>

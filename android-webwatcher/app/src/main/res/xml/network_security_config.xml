@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The detector runs on the laptop in the local network and speaks plain HTTP (http://192.168.x.x:8000).
+  Android cannot whitelist an IP range here (domain-config takes host names, not CIDR), so cleartext is allowed
+  at the platform level and RESTRICTED IN CODE: DetectorClient refuses http:// unless the host is a private,
+  loopback or .local address; the WebViews only ever load https:// (ServiceWebView blocks every other scheme).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

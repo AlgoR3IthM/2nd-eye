@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="sb-demo" content="whatsapp"><title>WhatsApp Web (demo)</title>
+<style>
+body{margin:0;font:16px Segoe UI,Arial,sans-serif;background:#e9edef;display:flex;height:100vh}
+#side{width:290px;background:#fff;border-right:1px solid #ccc;overflow:auto;flex:none}
+.legend{font-size:12px;color:#666;padding:10px;border-top:1px solid #eee}.legend div{margin-bottom:4px}
+.row{display:block;padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;color:inherit;text-decoration:none}
+.row .n{font-weight:600;display:block}.row .p{display:block;color:#555;font-size:14px}
+.unreadmark{background:#25d366;color:#fff;border-radius:10px;padding:0 7px;font-size:12px;float:right}
+#side h1{font-size:15px;margin:0;padding:12px;background:#222;color:#fff}
+#list button{display:block;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #eee;background:#fff;font:inherit;cursor:pointer}
+#list button small{display:block;color:#666;margin-top:2px}
+#list button.on{background:#d9fdd3}
+.pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:70%;padding:8px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 1px #0002}
+.out{align-self:flex-end;background:#d9fdd3}
+.hd{padding:12px 16px;background:#f0f2f5;font-weight:600;border-bottom:1px solid #ccc}
+
+</style></head><body>
+<div id="side"><h1>WhatsApp Web (demo) - conversații de probă</h1><div id="pane-side"><div id="list"></div></div><div class="legend"><div>1. +40 712 345 678: numar nesalvat, mesaj de tip 'numar nou'</div><div>2. Vecina Maria: contact salvat, discuție obișnuită</div><div>3. Radu (fiul): contact salvat care cere un cod</div></div></div>
+<div id="main" class="pane"><header><div class="hd"><span id="t" dir="auto"></span></div></header><div class="msgs" id="m"></div></div>
+<script>
+const CONVS=[{"label": "+40 712 345 678", "name": "+40 712 345 678", "note": "numar nesalvat, mesaj de tip 'numar nou'", "msgs": [["s", "Bună mami! Mi-am schimbat numărul, ăsta e cel nou. Salvează-l te rog."], ["r", "Cine ești?"], ["s", "Sunt Ioana, fata ta. Mi-a căzut telefonul în apă."], ["s", "Mami, am nevoie urgent de 2.400 lei pentru o reparație, îi poți trimite pe contul unui prieten? Nu spune nimănui, îți explic mai târziu."]]}, {"label": "Vecina Maria", "name": "Vecina Maria", "note": "contact salvat, discuție obișnuită", "msgs": [["s", "Bună ziua! Mâine vin la piață, vă aduc roșii și o pungă de mere."], ["r", "Mulțumesc, ce drăguță sunteți!"], ["s", "Cu plăcere, pe la zece sunt la dumneavoastră."]]}, {"label": "Radu (fiul)", "name": "Radu (fiul)", "note": "contact salvat care cere un cod", "msgs": [["s", "Mamă, mi-am schimbat telefonul și nu mai pot intra în contul de WhatsApp."], ["s", "Ți-a venit pe SMS un cod din 6 cifre? Zi-mi-l repede, te rog, e urgent."]]}];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function ROW(c,p){const r=el("div","row");r.setAttribute("role","listitem");const g=el("div","");g.setAttribute("role","gridcell");
+const u=el("span","unreadmark","1");u.setAttribute("aria-label","1 unread message");g.appendChild(u);
+const t=el("span","n",c.name);t.setAttribute("title",c.name);t.setAttribute("dir","auto");g.appendChild(t);
+const s=el("span","p",p);s.setAttribute("dir","ltr");s.setAttribute("title",p);g.appendChild(s);r.appendChild(g);return r}
+function READ(r){r.querySelectorAll(".unreadmark").forEach(e=>e.remove())}
+let n=0;function render(c){const t=document.getElementById("t");t.setAttribute("title",c.name);t.textContent=c.name;
+const m=document.getElementById("m");m.replaceChildren();c.msgs.forEach(([w,x])=>{n++;const row=el("div","");row.setAttribute("role","row");
+const d=el("div",w=="r"?"message-out b out":"message-in b");d.setAttribute("data-id",(w=="r"?"true_":"false_")+n);
+const cp=el("div","copyable-text");cp.setAttribute("data-pre-plain-text","[10:15, 3/5/2026] x: ");
+const sp=el("span","selectable-text copyable-text");sp.appendChild(el("span","",x));cp.appendChild(sp);d.appendChild(cp);row.appendChild(d);m.appendChild(row)})}
+function lastS(c){for(let i=c.msgs.length-1;i>=0;i--)if(c.msgs[i][0]=="s")return c.msgs[i][1];return ""}
+const list=document.getElementById("list");
+const ROWS=CONVS.map((c)=>{const r=ROW(c,lastS(c));r.addEventListener("click",(e)=>{e.preventDefault();READ(r);render(c)});list.appendChild(r);return r});
+const q=location.search.match(/c=([0-9])/);if(q)ROWS[+q[1]].click();
+</script></body></html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo – 2nd Eye pentru WhatsApp Web</title>
+<link rel="stylesheet" href="content.css">
+<style>
+  body { margin: 0; font-family: system-ui, "Segoe UI", Arial, sans-serif; background: #e5ddd5; }
+  #bar { padding: 8px 12px; background: #333; color: #fff; font-size: 16px; }
+  #bar button { font-size: 16px; padding: 6px 12px; margin-right: 6px; }
+  #main { max-width: 720px; margin: 0 auto; min-height: 90vh; background: #efeae2; }
+  header { padding: 14px 16px; background: #f0f2f5; font-size: 20px; font-weight: 600; padding-right: 60px; }
+  .msgs { padding: 16px; padding-top: 24px; }
+  .row { margin: 10px 0; display: flex; }
+  .message-out { justify-content: flex-end; }
+  .bub { max-width: 75%; padding: 8px 12px; border-radius: 8px; background: #fff; font-size: 17px; }
+  .message-out .bub { background: #d9fdd3; }
+</style>
+</head>
+<body>
+<div id="bar">DEMO fără WhatsApp (API local: localhost:8000) &nbsp;
+  <button data-s="scam">Țeapă: „număr nou”</button>
+  <button data-s="safe">Contact salvat, mesaj banal</button>
+  <button data-s="takeover">Contact salvat, cere cod</button>
+</div>
+<div id="main">
+  <header><span dir="auto" title="" id="title"></span></header>
+  <div class="msgs" id="msgs"></div>
+</div>
+<script>
+  // Same structure the content script expects from WhatsApp Web.
+  const SCEN = {
+    scam: { title: "+40 7xx xxx 318", msgs: [
+      ["in", "Bună mami, mi s-a stricat telefonul, ăsta e numărul nou. Salvează-l 😘"],
+      ["out", "Cine e?"],
+      ["in", "Eu, Andrei, cine să fie 😅"],
+      ["out", "A, bine, puiule."],
+      ["in", "Mami, am o problemă, trebuie să plătesc azi o factură și nu-mi merge aplicația. Poți să-mi faci tu un transfer de 1.850 lei? Ți-i dau înapoi mâine."],
+      ["in", "Te rog nu-i spune lui tata, se enervează."]] },
+    safe: { title: "Andrei (fiul meu)", msgs: [
+      ["in", "Ajung la ora șase, aduc pâine."],
+      ["out", "Bine, te aștept."]] },
+    takeover: { title: "Maria vecina", msgs: [
+      ["in", "Ți-a venit un cod pe telefon din greșeală. Poți să mi-l spui repede?"]] },
+  };
+  function load(key) {
+    const s = SCEN[key];
+    document.getElementById("title").setAttribute("title", s.title);
+    document.getElementById("title").textContent = s.title;
+    const box = document.getElementById("msgs");
+    box.textContent = "";
+    for (const [dir, text] of s.msgs) {
+      const row = document.createElement("div");
+      row.className = "row message-" + dir;
+      row.setAttribute("data-id", (dir === "out" ? "true_" : "false_") + Math.random());
+      const b = document.createElement("div"); b.className = "bub";
+      const t = document.createElement("span"); t.className = "selectable-text"; t.textContent = text;
+      b.appendChild(t); row.appendChild(b); box.appendChild(row);
+    }
+  }
+  document.querySelectorAll("#bar button").forEach((b) => b.onclick = () => load(b.dataset.s));
+  load("scam");
+</script>
+<script src="content.js"></script>
+</body>
+</html>

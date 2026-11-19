@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="sb-demo" content="instagram"><title>Instagram Direct (demo)</title>
+<style>
+body{margin:0;font:16px Segoe UI,Arial,sans-serif;background:#e9edef;display:flex;height:100vh}
+#side{width:290px;background:#fff;border-right:1px solid #ccc;overflow:auto;flex:none}
+.legend{font-size:12px;color:#666;padding:10px;border-top:1px solid #eee}.legend div{margin-bottom:4px}
+.row{display:block;padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;color:inherit;text-decoration:none}
+.row .n{font-weight:600;display:block}.row .p{display:block;color:#555;font-size:14px}
+.unreadmark{background:#25d366;color:#fff;border-radius:10px;padding:0 7px;font-size:12px;float:right}
+#side h1{font-size:15px;margin:0;padding:12px;background:#222;color:#fff}
+#list button{display:block;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #eee;background:#fff;font:inherit;cursor:pointer}
+#list button small{display:block;color:#666;margin-top:2px}
+#list button.on{background:#d9fdd3}
+.pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:70%;padding:8px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 1px #0002}
+.out{align-self:flex-end;background:#d9fdd3}
+.hd{padding:12px 16px;background:#f0f2f5;font-weight:600;border-bottom:1px solid #ccc}
+
+</style></head><body>
+<div id="side"><h1>Instagram Direct (demo) - conversații de probă</h1><div id="list"></div><div class="legend"><div>1. oferta_zilei_shop (cerere): cerere de mesaj, premiu fals</div><div>2. alex.nepotul: nepotul, discuție obișnuită</div><div>3. mihai.popa77: cunoscut care cere un cod</div></div></div>
+<div role="main" class="pane"><header class="hd"><h2 id="t" style="margin:0;font-size:16px"></h2></header><div id="acc"></div><div class="msgs" id="m"></div></div>
+<script>
+const CONVS=[{"label": "oferta_zilei_shop (cerere)", "name": "oferta_zilei_shop", "hash": "#/direct/requests/t/201", "note": "cerere de mesaj, premiu fals", "msgs": [["s", "Felicitări! Ați câștigat un voucher de 1.000 lei la tragerea noastră."], ["s", "Pentru a-l primi, achitați taxa de livrare de 19 lei pe linkul acesta și introduceți datele cardului: voucher-castig.example/plata. Oferta expiră în 30 de minute!"]]}, {"label": "alex.nepotul", "name": "alex.nepotul", "hash": "#/direct/t/202", "note": "nepotul, discuție obișnuită", "msgs": [["s", "Bunico, am luat 10 la test! 😄"], ["r", "Bravo, puiule!"], ["s", "Mâine vin pe la tine după școală."]]}, {"label": "mihai.popa77", "name": "mihai.popa77", "hash": "#/direct/t/203", "note": "cunoscut care cere un cod", "msgs": [["s", "Hei, cei de la Instagram mi-au blocat contul."], ["s", "Îți trimit un cod de verificare pe telefon. Cum îți vine, scrie-l aici, e doar pentru confirmare."]]}];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function ROW(c,p){const r=el("a","row");r.setAttribute("role","link");r.setAttribute("href",c.hash);
+const u=el("span","unreadmark","");u.setAttribute("aria-label","Unread");u.textContent="";u.style.width="8px";u.style.height="8px";u.style.padding="0";r.appendChild(u);
+r.appendChild(el("span","n",c.name));const s=el("span","p",p);s.style.fontWeight="700";s.setAttribute("dir","auto");r.appendChild(s);return r}
+function READ(r){r.querySelectorAll(".unreadmark").forEach(e=>e.remove());const p=r.querySelector(".p");if(p)p.style.fontWeight="400"}
+location.hash="#/direct/inbox";function render(c){document.getElementById("t").textContent=c.name;location.hash=c.hash;
+const acc=document.getElementById("acc");acc.replaceChildren();
+if(c.hash.indexOf("requests")>0){const b=el("button","","Acceptă");b.type="button";acc.appendChild(b)}
+const m=document.getElementById("m");m.replaceChildren();
+c.msgs.forEach(([w,x])=>{const row=el("div","");row.setAttribute("role","row");row.style.display="flex";row.style.justifyContent=w=="r"?"flex-end":"flex-start";
+const d=el("div","b"+(w=="r"?" out":""));d.setAttribute("dir","auto");d.textContent=x;row.appendChild(d);m.appendChild(row)})}
+function lastS(c){for(let i=c.msgs.length-1;i>=0;i--)if(c.msgs[i][0]=="s")return c.msgs[i][1];return ""}
+const list=document.getElementById("list");
+const ROWS=CONVS.map((c)=>{const r=ROW(c,lastS(c));r.addEventListener("click",(e)=>{e.preventDefault();READ(r);render(c)});list.appendChild(r);return r});
+const q=location.search.match(/c=([0-9])/);if(q)ROWS[+q[1]].click();
+</script></body></html>

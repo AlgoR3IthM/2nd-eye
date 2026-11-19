@@ -1,0 +1,20 @@
+{
+  "_comment": "Per-flag acceptance of LLM-only flags (flags no rule/contact check found). accept=false: LLM never adds that flag. min_evidence_chars: evidence quote length after folding. reader replies never produce flags. Genuine-message guard overrides everything.",
+  "llm_flags": {
+    "RF_CODE_REQUEST":       {"accept": true,  "min_evidence_chars": 6},
+    "RF_REMOTE_ACCESS":      {"accept": true,  "min_evidence_chars": 6},
+    "RF_DATA_REQUEST":       {"accept": true,  "min_evidence_chars": 6},
+    "RF_PAYMENT_REQUEST":    {"accept": true,  "min_evidence_chars": 6},
+    "RF_SUSPICIOUS_CONTACT": {"accept": false, "min_evidence_chars": 6},
+    "RF_NEW_NUMBER":         {"accept": true,  "min_evidence_chars": 6, "unknown_sender_only": true},
+    "RF_SECRECY":            {"accept": true,  "min_evidence_chars": 6},
+    "RF_TOO_GOOD":           {"accept": false,  "min_evidence_chars": 6},
+    "RF_IMPERSONATION":      {"accept": false, "min_evidence_chars": 6},
+    "RF_URGENCY":            {"accept": false, "min_evidence_chars": 4},
+    "RF_THREAT":             {"accept": true,  "min_evidence_chars": 6},
+    "RF_EMOTIONAL_PRESSURE": {"accept": false, "min_evidence_chars": 6},
+    "RF_CHANNEL_SWITCH":     {"accept": true,  "min_evidence_chars": 6}
+  },
+  "llm_scam_type_tiebreak": true,
+  "llm_person_name": true
+}

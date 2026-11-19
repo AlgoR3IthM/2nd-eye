@@ -1,0 +1,25 @@
+{
+ "train": 1170,
+ "dev": 130,
+ "kinds": {
+  "scam": 488,
+  "neg": 570,
+  "scam_slow": 242
+ },
+ "types": {
+  "ACCOUNT_TAKEOVER": 55,
+  "INVESTMENT": 51,
+  "BANK_IMPERSONATION": 83,
+  "NONE": 570,
+  "ROMANCE": 204,
+  "JOB_OFFER": 49,
+  "FAMILY_EMERGENCY": 72,
+  "PRIZE_LOTTERY": 24,
+  "TECH_SUPPORT": 40,
+  "COURIER_FEE": 58,
+  "MARKETPLACE": 46,
+  "AUTHORITY_IMPERSONATION": 48
+ },
+ "obfuscated": 581,
+ "empty_flag_examples": 570
+}

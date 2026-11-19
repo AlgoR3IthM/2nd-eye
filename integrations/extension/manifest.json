@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "2nd Eye – AlgoR3IthM",
+  "version": "0.1.0",
+  "description": "Avertizează în WhatsApp Web când o conversație cu un necunoscut seamănă cu o țeapă. Mesajele sunt verificate doar pe acest calculator.",
+  "permissions": [],
+  "host_permissions": ["https://web.whatsapp.com/*", "http://localhost:8000/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

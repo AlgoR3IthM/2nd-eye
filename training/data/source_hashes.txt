@@ -1,0 +1,2 @@
+4b5dce80a14ff5169d9a8c30a078b5f2 *../backend/llm.py
+95d0f60e9fe3151b9f517b52475e1077 *../backend/patterns.json

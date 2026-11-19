@@ -1,0 +1,24 @@
+#main { position: relative; }
+.sb-banner {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 99999;
+  display: flex; align-items: center; gap: 16px; padding: 14px 18px;
+  font-family: system-ui, "Segoe UI", Arial, sans-serif; color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+.sb-scam { background: #b71c1c; }
+.sb-warn { background: #b45309; }
+.sb-icon { font-size: 40px; line-height: 1; flex: none; }
+.sb-body { flex: 1; min-width: 0; }
+.sb-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.sb-text { font-size: 18px; line-height: 1.4; }
+.sb-dismiss {
+  flex: none; font-size: 18px; padding: 10px 16px; border-radius: 8px; cursor: pointer;
+  border: 2px solid #fff; background: transparent; color: #fff; font-weight: 600;
+}
+.sb-dismiss:hover { background: rgba(255, 255, 255, .2); }
+.sb-first-alert { outline: 4px solid #d32f2f; outline-offset: 2px; border-radius: 8px; }
+.sb-tick {
+  position: absolute; top: 8px; right: 12px; z-index: 99999; width: 26px; height: 26px;
+  border-radius: 50%; background: #2e7d32; color: #fff; font-size: 16px; line-height: 26px;
+  text-align: center; opacity: .85;
+}

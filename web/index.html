@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2nd Eye - AlgoR3IthM</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --ink:#111827; --muted:#374151; --line:#9ca3af;
+  --brand:#0b3d91; --brand-ink:#fff;
+  --safe-bg:#dcfce7; --safe:#14532d; --safe-line:#15803d;
+  --warn-bg:#fef3c7; --warn:#78350f; --warn-line:#b45309;
+  --bad-bg:#fee2e2; --bad:#7f1d1d; --bad-line:#b91c1c;
+  --hl:#fde047;
+}
+*{box-sizing:border-box}
+html{font-size:18px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:1rem;line-height:1.45}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:4px solid #2563eb;outline-offset:2px}
+header{background:var(--brand);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:48px;height:48px;flex:none}
+.brand{flex:1;min-width:180px}
+.brand b{display:block;font-size:1.5rem;line-height:1.1}
+.brand span{font-size:1rem;opacity:.95}
+.status{display:flex;align-items:center;gap:6px;font-size:1rem;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:99px}
+.dot{width:14px;height:14px;border-radius:50%;background:#9ca3af;border:2px solid #fff;flex:none}
+.dot.on{background:#22c55e}.dot.rules{background:#facc15}.dot.off{background:#ef4444}
+.hbtn{background:#fff;color:var(--brand);border:2px solid #fff;border-radius:10px;padding:6px 12px;font-weight:700;min-height:44px}
+nav{display:flex;gap:6px;padding:10px 14px 0;max-width:1200px;margin:0 auto}
+nav button{flex:1;padding:12px 8px;border:3px solid var(--brand);border-bottom:0;border-radius:12px 12px 0 0;background:#fff;color:var(--brand);font-weight:700;font-size:1.05rem}
+nav button[aria-selected=true]{background:var(--brand);color:#fff}
+main{max-width:1200px;margin:0 auto;padding:0 14px 40px}
+.panel{background:var(--card);border:3px solid var(--brand);border-radius:0 0 14px 14px;padding:16px}
+h2{margin:.2em 0 .5em;font-size:1.3rem}
+textarea{width:100%;min-height:200px;font-size:1.15rem;padding:12px;border:3px solid var(--line);border-radius:12px;resize:vertical;background:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.btn{border:3px solid var(--brand);background:#fff;color:var(--brand);border-radius:12px;padding:10px 16px;font-weight:700;min-height:48px}
+.btn.big{display:block;width:100%;background:var(--brand);color:#fff;font-size:1.6rem;padding:18px 12px;min-height:72px;border-radius:16px}
+.btn:disabled{opacity:.6;cursor:wait}
+.check{display:flex;align-items:center;gap:10px;font-size:1.05rem}
+.check input{width:28px;height:28px;flex:none}
+.msg{padding:12px 14px;border-radius:12px;border:3px solid var(--warn-line);background:var(--warn-bg);color:var(--warn);font-weight:600;margin:10px 0}
+.msg.info{border-color:var(--brand);background:#dbeafe;color:#1e3a8a}
+.hidden{display:none!important}
+.love{background:#fff;color:var(--ink);border:3px solid var(--brand);border-radius:12px;padding:14px;margin-top:14px}
+.love h3{margin:0 0 8px;font-size:1.3rem}
+.love ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.love li{border:3px solid var(--line);border-radius:10px;padding:8px 10px;font-size:1.05rem}
+.love li.yes{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn);font-weight:700}
+.love li b{display:block;font-size:1.05rem}
+.love .big{font-size:1.5rem;font-weight:800;line-height:1.3;margin:12px 0 0}
+
+/* result */
+.result{border:5px solid;border-radius:18px;padding:16px;margin-top:16px}
+.result.SAFE{background:var(--safe-bg);border-color:var(--safe-line);color:var(--safe)}
+.result.SUSPICIOUS{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+.result.SCAM{background:var(--bad-bg);border-color:var(--bad-line);color:var(--bad)}
+.vhead{display:flex;gap:12px;align-items:center}
+.vicon{font-size:3rem;line-height:1;flex:none;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;border:4px solid currentColor;font-weight:900}
+.vlabel{font-size:1.9rem;font-weight:800;line-height:1.15}
+.warning{font-size:1.65rem;line-height:1.35;margin:14px 0;font-weight:600;color:var(--ink);background:#fff;border-radius:12px;padding:14px}
+.chips-title{font-weight:800;font-size:1.15rem;margin:12px 0 6px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#fff;border:3px solid currentColor;border-radius:99px;padding:6px 14px;font-weight:700;font-size:1.1rem;color:var(--ink)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.acts .btn{flex:1;min-width:200px;font-size:1.15rem}
+.tel{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+details{margin-top:12px;color:var(--ink)}
+summary{cursor:pointer;font-weight:700;padding:6px 0}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.tag{font-size:.95rem;background:#fff;border:2px solid var(--line);border-radius:8px;padding:2px 8px;color:var(--ink)}
+/* thread */
+.thread{display:flex;flex-direction:column;gap:12px;margin-top:14px;color:var(--ink)}
+.bwrap{display:flex;flex-direction:column;max-width:92%}
+.bwrap.sender{align-self:flex-start}
+.bwrap.reader{align-self:flex-end;align-items:flex-end}
+.bubble{padding:10px 14px;border-radius:16px;font-size:1.1rem;white-space:pre-wrap;word-break:break-word;border:3px solid var(--line);background:#fff}
+.bwrap.reader .bubble{background:#d1d5db;border-color:#6b7280;border-bottom-right-radius:4px}
+.bwrap.sender .bubble{border-bottom-left-radius:4px}
+.bwrap.first .bubble{border:5px solid var(--bad-line);background:#fff5f5}
+.firstlbl{background:var(--bad-line);color:#fff;font-weight:800;padding:4px 10px;border-radius:8px 8px 0 0;align-self:flex-start;font-size:1rem}
+.who{font-size:.95rem;color:var(--muted);margin:0 6px 2px}
+mark{background:var(--hl);color:#000;border-radius:4px;padding:0 2px;font-weight:700;text-decoration:underline;text-decoration-style:wavy;text-underline-offset:3px}
+.nf{margin-top:4px}
+.nf .tag{border-color:var(--bad-line);color:var(--bad);background:#fff5f5;font-weight:600}
+.risk{margin-top:6px;width:min(420px,100%)}
+.rbar{position:relative;height:16px;background:#e5e7eb;border:2px solid #4b5563;border-radius:8px;overflow:hidden}
+.rfill{height:100%}
+.rtick{position:absolute;top:0;bottom:0;width:3px;background:#000}
+.rtxt{font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between}
+/* dashboard */
+.drop{border:4px dashed var(--brand);border-radius:14px;padding:16px;text-align:center;background:#eff6ff}
+.drop.over{background:#bfdbfe}
+.summary{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.sbox{flex:1;min-width:120px;border:3px solid;border-radius:12px;padding:6px 10px;text-align:center;font-weight:800;font-size:1.2rem;background:#fff}
+.sbox small{display:block;font-weight:600;font-size:.95rem}
+.sbox.SAFE{border-color:var(--safe-line);color:var(--safe)}
+.sbox.SUSPICIOUS{border-color:var(--warn-line);color:var(--warn)}
+.sbox.SCAM{border-color:var(--bad-line);color:var(--bad)}
+.sbox.ALL{border-color:var(--brand);color:var(--brand)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:1.1rem;min-width:820px}
+th{background:var(--brand);color:#fff;text-align:left;padding:6px 8px;position:sticky;top:0}
+td{padding:3px 8px;border-bottom:2px solid #d1d5db;white-space:nowrap}
+td.fl{white-space:normal;font-size:.85rem;font-family:ui-monospace,Consolas,monospace;line-height:1.2}
+tbody tr{cursor:pointer;height:38px}
+tbody tr:hover{background:#eff6ff}
+tbody tr:focus-visible{outline:4px solid #2563eb;outline-offset:-4px}
+.vb{display:inline-block;font-weight:800;padding:1px 10px;border-radius:8px;border:3px solid}
+.vb.SAFE{background:var(--safe-bg);color:var(--safe);border-color:var(--safe-line)}
+.vb.SUSPICIOUS{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-line)}
+.vb.SCAM{background:var(--bad-bg);color:var(--bad);border-color:var(--bad-line)}
+.vb.ERR{background:#e5e7eb;border-color:#4b5563}
+td.diff{background:#fecaca;outline:3px solid var(--bad-line);outline-offset:-3px;font-weight:800}
+.progress{height:20px;border:2px solid var(--brand);border-radius:10px;overflow:hidden;background:#fff}
+.progress div{height:100%;background:var(--brand);width:0}
+.cmp{margin-top:10px;font-weight:700;font-size:1.1rem}
+dialog{border:5px solid var(--brand);border-radius:16px;padding:16px;max-width:760px;width:calc(100% - 20px);max-height:92vh;overflow:auto;background:#fff;color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog label{display:block;font-weight:700;margin:10px 0 4px}
+dialog input[type=text],dialog input[type=tel]{width:100%;padding:10px;border:3px solid var(--line);border-radius:10px;font-size:1.1rem}
+.toolbar{display:block}
+body.compact header{padding:4px 14px}
+body.compact .logo{width:34px;height:34px}
+body.compact .brand span{display:none}
+body.compact .brand b{font-size:1.2rem}
+body.compact nav{padding-top:6px}
+body.compact nav button{padding:6px 8px}
+body.compact .panel{padding:8px}
+body.compact .drop{padding:0 8px;border-width:2px;border-radius:8px}
+body.compact .drop>div:first-child{display:none}
+body.compact .drop .row{margin:2px 0}
+body.compact .drop .btn{min-height:30px;padding:0 12px;border-width:2px}
+body.compact .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+body.compact .summary{flex:1;margin:6px 0;flex-wrap:nowrap}
+body.compact .sbox{padding:0 8px;min-width:0;font-size:1.1rem;display:flex;gap:8px;align-items:center;justify-content:center}
+body.compact .toolbar .row{margin:0;flex-wrap:nowrap}
+body.compact .toolbar .btn{min-height:36px;padding:2px 10px;font-size:.95rem}
+body.compact .cmp{margin:2px 0;font-size:1rem}
+body.compact th{padding:3px 8px}
+body.compact main,body.compact nav{max-width:1700px}
+body.compact td,body.compact th{line-height:1.1}
+body.compact tbody tr{height:25px}
+body.compact td.fl{font-size:.78rem;overflow-wrap:anywhere}
+body.compact .msg{padding:4px 10px;margin:4px 0;font-size:.95rem}
+body.compact td{padding:0 8px}
+body.compact .vb{padding:0 8px;border-width:2px;font-size:1rem;line-height:1.05}
+body.compact nav button{font-size:1rem}
+/* import tab */
+.hint{font-size:1.05rem;color:var(--muted);margin:6px 0 10px}
+.q{font-weight:800;font-size:1.25rem;margin:16px 0 8px}
+.pbtns{display:flex;gap:10px;flex-wrap:wrap}
+.pbtn{border:3px solid var(--brand);background:#fff;color:var(--brand);border-radius:14px;padding:12px 18px;font-weight:800;font-size:1.3rem;min-height:56px;max-width:100%;overflow-wrap:anywhere}
+.pbtn[aria-pressed=true]{background:var(--brand);color:#fff}
+select{font-size:1.15rem;padding:10px;border:3px solid var(--line);border-radius:10px;background:#fff;min-height:48px;max-width:100%}
+.impthread{max-height:420px;overflow-y:auto;padding:10px;border:3px solid var(--line);border-radius:12px;background:#f9fafb;margin-top:6px}
+.fmtline{font-weight:700;margin:10px 0 0}
+@media (max-width:480px){
+  .vlabel{font-size:1.6rem}.warning{font-size:1.45rem}.btn.big{font-size:1.4rem}
+  nav{padding:8px 8px 0}main{padding:0 8px 30px}.panel{padding:10px}
+}
+@media (min-width:900px){ .warning{font-size:1.9rem} .vlabel{font-size:2.2rem} }
+</style>
+</head>
+<body>
+<header>
+  <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="Shield">
+    <path d="M32 4 56 13v18c0 15-10 25-24 29C18 56 8 46 8 31V13z" fill="#fff"/>
+    <path d="M32 10 50 17v14c0 11-7 19-18 23C21 50 14 42 14 31V17z" fill="#0b3d91"/>
+    <path d="M23 32l7 7 12-14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="brand"><b>2nd Eye</b><span>Scam Shield &middot; <strong>AlgoR3IthM</strong></span></div>
+  <div class="status" id="status" role="status"><span class="dot" id="dot"></span><span id="statusTxt"></span></div>
+  <button class="hbtn" id="btnSettings" type="button"><span aria-hidden="true">&#9742;</span> <span data-i="settings"></span></button>
+  <button class="hbtn" id="btnLang" type="button" aria-label="Limba / Language">EN</button>
+</header>
+
+<nav role="tablist">
+  <button role="tab" id="tabCheck" aria-selected="true" aria-controls="pCheck" data-i="tabCheck"></button>
+  <button role="tab" id="tabImp" aria-selected="false" aria-controls="pImp" data-i="tabImp"></button>
+  <button role="tab" id="tabDash" aria-selected="false" aria-controls="pDash" data-i="tabDash"></button>
+</nav>
+
+<main>
+<section class="panel" id="pCheck" role="tabpanel">
+  <h2 data-i="pasteTitle"></h2>
+  <textarea id="txt" data-ph="pastePh" aria-label="Message"></textarea>
+  <div class="row">
+    <button class="btn" id="btnFile" type="button"><span aria-hidden="true">&#128193;</span> <span data-i="openFile"></span></button>
+    <input type="file" id="fileOne" accept=".json,application/json" class="hidden">
+    <label class="check"><input type="checkbox" id="known"> <span data-i="known"></span></label>
+  </div>
+  <div id="fileNote" class="msg info hidden"></div>
+  <button class="btn big" id="btnGo" type="button"><span aria-hidden="true">&#128269;</span> <span data-i="go"></span></button>
+  <div id="checkMsg" class="msg hidden" role="alert"></div>
+  <div id="resultBox"></div>
+</section>
+
+<section class="panel hidden" id="pImp" role="tabpanel">
+  <h2 data-i="impTitle"></h2>
+  <div class="hint" data-i="impHint"></div>
+  <textarea id="impTxt" data-ph="impPh" aria-label="Conversation"></textarea>
+  <div class="row">
+    <button class="btn" id="impFileBtn" type="button"><span aria-hidden="true">&#128193;</span> <span data-i="impOpen"></span></button>
+    <input type="file" id="impFile" accept=".txt,text/plain" class="hidden">
+  </div>
+  <div id="impNote" class="msg info hidden" role="status"></div>
+  <div id="impStep" class="hidden">
+    <div class="fmtline" id="impFmt"></div>
+    <div id="impWho">
+      <div class="q" id="impQ"></div>
+      <div class="pbtns" id="impBtns" role="group" aria-labelledby="impQ"></div>
+    </div>
+    <div class="row">
+      <label for="impChan" style="font-weight:700" data-i="impChan"></label>
+      <select id="impChan">
+        <option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="telegram">Telegram</option>
+        <option value="messenger">Messenger</option><option value="email">Email</option>
+      </select>
+      <label class="check"><input type="checkbox" id="impKnown"> <span data-i="impKnown"></span></label>
+    </div>
+    <div class="q" data-i="impPrev"></div>
+    <div class="impthread thread" id="impThread" tabindex="0"></div>
+    <div style="height:14px"></div>
+    <button class="btn big" id="impGo" type="button"><span aria-hidden="true">&#128269;</span> <span id="impGoTxt"></span></button>
+  </div>
+  <div id="impMsg" class="msg hidden" role="alert"></div>
+  <div id="impResult"></div>
+</section>
+
+<section class="panel hidden" id="pDash" role="tabpanel">
+  <div class="drop" id="drop">
+    <div style="font-weight:700" data-i="dropTitle"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn" id="btnFolder" type="button"><span aria-hidden="true">&#128194;</span> <span data-i="loadFolder"></span></button>
+      <button class="btn" id="btnFiles" type="button"><span aria-hidden="true">&#128196;</span> <span data-i="loadFiles"></span></button>
+    </div>
+    <input type="file" id="inFolder" webkitdirectory directory multiple class="hidden">
+    <input type="file" id="inFiles" accept=".json,application/json" multiple class="hidden">
+    <div class="progress hidden" id="prog"><div id="progBar"></div></div>
+    <div id="progTxt"></div>
+  </div>
+  <div id="dashMsg" class="msg hidden" role="alert"></div>
+  <div class="toolbar"><div class="summary" id="summary"></div>
+  <div class="row" id="dashActs">
+    <button class="btn" id="btnCsv" type="button" disabled><span aria-hidden="true">&#128190;</span> <span data-i="exportCsv"></span></button>
+    <button class="btn" id="btnCmp" type="button" disabled><span aria-hidden="true">&#9878;</span> <span data-i="compare"></span></button>
+    <input type="file" id="inCsv" accept=".csv,text/csv" class="hidden">
+  </div></div>
+  <div class="cmp" id="cmpOut"></div>
+  <div class="tw"><table id="tbl">
+    <thead><tr><th>ID</th><th data-i="colVerdict"></th><th data-i="colType"></th><th data-i="colScore"></th><th data-i="colFirst"></th><th data-i="colFlags"></th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+</section>
+</main>
+
+<dialog id="dlgDetail">
+  <div class="row" style="justify-content:space-between"><h2 id="detTitle" style="margin:0"></h2><button class="btn" id="detClose" type="button" data-i="close"></button></div>
+  <div id="detBody"></div>
+</dialog>
+
+<dialog id="dlgSet">
+  <h2 data-i="settingsTitle"></h2>
+  <p data-i="settingsHelp"></p>
+  <label for="tName" data-i="tName"></label>
+  <input type="text" id="tName" autocomplete="off">
+  <label for="tNum" data-i="tNum"></label>
+  <input type="tel" id="tNum" inputmode="tel" autocomplete="off" placeholder="07xx xxx xxx">
+  <div class="row"><button class="btn" id="setSave" type="button" data-i="save"></button><button class="btn" id="setClear" type="button" data-i="clear"></button><button class="btn" id="setClose" type="button" data-i="close"></button></div>
+</dialog>
+
+<script>
+"use strict";
+(function(){
+var MAX_CHARS = 8000;
+
+var S = {
+ ro:{
+  loveTitle:"Semnele unei povești de dragoste false", loveYes:"⚠ Apare", loveNo:"✔ Nu apare",
+  loveS1:"Îl cunoașteți doar de pe internet sau de la un mesaj venit din greșeală", loveS2:"Vorbește foarte repede despre dragoste", loveS3:"Are mereu un motiv să nu vă vedeți sau să nu vorbiți video", loveS4:"Vrea să vorbiți pe altă aplicație sau în secret", loveS5:"Cere bani pentru un drum, un colet, un spital sau o investiție", loveS6:"Promite că vă dă banii înapoi sau că veți fi bogați împreună",
+  loveBig:"Cineva care vă iubește cu adevărat nu vă cere bani înainte să vă cunoască în persoană. Vorbiți cu cineva din familie înainte de orice.",
+  settings:"Persoană de încredere", tabCheck:"Verifică un mesaj", tabDash:"Tablou de rezultate",
+  pasteTitle:"Lipiți aici mesajul primit", pastePh:"Lipiți aici mesajul care vă îngrijorează...",
+  openFile:"Deschide fișier", known:"Este de la cineva din agenda mea", go:"Verifică mesajul", checking:"Se verifică...",
+  health_llm:"Pornit (cu analiză avansată)", health_rules:"Pornit (verificare pe reguli)", health_off:"Serverul nu răspunde", health_unk:"Se verifică serverul...",
+  v_SAFE:"Pare în regulă", v_SUSPICIOUS:"Atenție, verificați înainte să răspundeți", v_SCAM:"Pare o țeapă! Nu răspundeți",
+  wants:"Ce vrea de la dumneavoastră?", wantsNone:"Nu cere nimic periculos.", details:"Detalii: semne de alarmă și conversație", flagsTitle:"Semne de alarmă găsite",
+  speak:"Citește cu voce tare", stopSpeak:"Oprește citirea", call:"Sună pe cineva de încredere", callNamed:"Sună: ",
+  noVoice:"Nu am găsit pe acest dispozitiv o voce locală pentru citire. Mesajul nu este trimis nicăieri, deci nu pot citi cu voce tare.",
+  noSpeech:"Citirea cu voce tare nu este disponibilă în acest browser.",
+  needTrusted:"Mai întâi salvați o persoană de încredere (nume și număr).",
+  settingsTitle:"Persoană de încredere", settingsHelp:"Familia salvează o singură dată aici cine poate fi sunat. Se păstrează doar pe acest dispozitiv.",
+  tName:"Nume (de exemplu: Andrei, fiul meu)", tNum:"Număr de telefon", save:"Salvează", clear:"Șterge", close:"Închide", saved:"Salvat.",
+  badNum:"Numărul nu pare corect. Folosiți doar cifre, de exemplu 0712345678.",
+  firstHere:"Aici începe pericolul", sender:"Expeditor", reader:"Dumneavoastră", risk:"Risc", thr:"25 = suspect, 50 = țeapă",
+  fileNote:"Fișier încărcat: ", fileCleared:"",
+  errEmpty:"Nu ați lipit niciun mesaj. Lipiți textul în căsuță și apăsați butonul mare.",
+  errLong:"Mesajul este foarte lung (peste "+MAX_CHARS+" de caractere). Lipiți doar partea importantă, vă rog.",
+  errJson:"Fișierul nu pare un scenariu valid. Alegeți un fișier .json cu mesaje, sau lipiți textul mesajului.",
+  errNoMsgs:"Fișierul nu conține mesaje de verificat.",
+  errServer:"Nu mă pot conecta la serverul local. Verificați că aplicația este pornită și încercați din nou.",
+  errBad:"Serverul a răspuns neașteptat. Încercați din nou peste câteva clipe.",
+  dropTitle:"Trageți aici un dosar sau mai multe fișiere .json (doar acestea sunt analizate)",
+  loadFolder:"Încarcă un dosar", loadFiles:"Încarcă fișiere", exportCsv:"Export CSV", compare:"Compară cu rezultatele așteptate",
+  colVerdict:"Verdict", colType:"Tip țeapă", colScore:"Scor de risc", colFirst:"Prima alertă", colFlags:"Semne de alarmă (coduri)",
+  total:"Scenarii încărcate", progress:"Se analizează ", of:" din ", done:"Gata.",
+  noJson:"Nu am găsit niciun fișier .json în selecție.", skipped:" fișier(e) ignorate (nu sunt .json).", failedN:" scenariu(i) nu au putut fi analizate (marcate cu ERR).",
+  cmpTitle:"Comparație cu fișierul așteptat", cmpVerdict:"verdict", cmpType:"tip", cmpFirst:"prima alertă", cmpMissing:"fără rând așteptat: ",
+  errCsv:"Fișierul CSV nu pare corect.", cmpFirstLoad:"Încărcați mai întâi scenariile.",
+  detTitle:"Detalii scenariu ", expected:"așteptat: ", noMsgs:"(fără mesaje)",
+  tabImp:"Importă o conversație", impTitle:"Importați o conversație întreagă",
+  impHint:"În WhatsApp: selectați mesajele, apăsați Copiere și lipiți aici. Sau deschideți un fișier exportat (.txt). Conversația rămâne pe acest calculator.",
+  impPh:"Lipiți aici conversația copiată din WhatsApp, Telegram sau alt program...", impOpen:"Deschide conversația exportată (.txt)",
+  impFile:"Fișier încărcat: ", impQ:"Care dintre aceștia sunteți dumneavoastră?", impChan:"Canal:", impKnown:"Este din agenda mea",
+  impPrev:"Așa am înțeles conversația (dumneavoastră în dreapta, în gri):", impGo:"Verifică conversația", impGoSingle:"Verifică mesajul primit",
+  impMore:"Se arată doar primele mesaje.",
+  impSelNone:"Alegeți mai întâi care dintre participanți sunteți dumneavoastră.",
+  impOne:"Am găsit un singur participant. Nu este o problemă: pot verifica textul ca pe un mesaj primit de la cealaltă persoană.",
+  impPlain:"Nu am recunoscut o conversație cu mai mulți participanți. Pot verifica textul ca pe un singur mesaj primit de la cealaltă persoană.",
+  impEmpty:"Nu am găsit mesaje în text. Lipiți conversația sau alegeți un fișier .txt.",
+  impLong:"Textul este foarte lung. Lipiți doar partea importantă, vă rog.",
+  impMsgs:" mesaje",
+  fmt_whatsapp_web:"Format recunoscut: WhatsApp (copiat din WhatsApp Web sau desktop)", fmt_whatsapp_android:"Format recunoscut: WhatsApp (export Android)",
+  fmt_whatsapp_ios:"Format recunoscut: WhatsApp (export iPhone)", fmt_telegram:"Format recunoscut: Telegram",
+  fmt_generic:"Format recunoscut: rânduri de tipul „Nume: mesaj”", fmt_plain:"Format: text simplu"
+ },
+ en:{
+  loveTitle:"Signs of a fake love story", loveYes:"⚠ Found", loveNo:"✔ Not found",
+  loveS1:"You know them only from the internet or from a message sent by mistake", loveS2:"They talk about love very fast", loveS3:"They always have a reason not to meet or not to talk on video", loveS4:"They want to move to another app or keep it secret", loveS5:"They ask for money for a trip, a parcel, a hospital or an investment", loveS6:"They promise to pay you back or that you will be rich together",
+  loveBig:"Someone who truly loves you does not ask you for money before meeting you in person. Talk to someone in your family before doing anything.",
+  settings:"Trusted person", tabCheck:"Check a message", tabDash:"Results dashboard",
+  pasteTitle:"Paste the message you received", pastePh:"Paste the message that worries you here...",
+  openFile:"Open file", known:"It is from someone in my contacts", go:"Check the message", checking:"Checking...",
+  health_llm:"On (with advanced analysis)", health_rules:"On (rules-only check)", health_off:"Server not responding", health_unk:"Checking server...",
+  v_SAFE:"Looks fine", v_SUSPICIOUS:"Careful, check before you reply", v_SCAM:"Looks like a scam! Do not reply",
+  wants:"What does it want from you?", wantsNone:"It does not ask for anything dangerous.", details:"Details: warning signs and conversation", flagsTitle:"Warning signs found",
+  speak:"Read aloud", stopSpeak:"Stop reading", call:"Call someone you trust", callNamed:"Call: ",
+  noVoice:"No local voice for reading was found on this device. The message is never sent anywhere, so I cannot read it aloud.",
+  noSpeech:"Reading aloud is not available in this browser.",
+  needTrusted:"First save a trusted person (name and number).",
+  settingsTitle:"Trusted person", settingsHelp:"The family saves once here who can be called. It stays only on this device.",
+  tName:"Name (for example: Andrei, my son)", tNum:"Phone number", save:"Save", clear:"Delete", close:"Close", saved:"Saved.",
+  badNum:"The number does not look right. Use digits only, for example 0712345678.",
+  firstHere:"Danger starts here", sender:"Sender", reader:"You", risk:"Risk", thr:"25 = suspicious, 50 = scam",
+  fileNote:"File loaded: ", fileCleared:"",
+  errEmpty:"No message pasted. Paste the text in the box and press the big button.",
+  errLong:"The message is very long (over "+MAX_CHARS+" characters). Please paste only the important part.",
+  errJson:"The file does not look like a valid scenario. Choose a .json file with messages, or paste the message text.",
+  errNoMsgs:"The file contains no messages to check.",
+  errServer:"I cannot reach the local server. Check that the app is running and try again.",
+  errBad:"The server answered unexpectedly. Please try again in a moment.",
+  dropTitle:"Drop a folder or several .json files here (only these are analysed)",
+  loadFolder:"Load a folder", loadFiles:"Load files", exportCsv:"Export CSV", compare:"Compare with expected results",
+  colVerdict:"Verdict", colType:"Scam type", colScore:"Risk score", colFirst:"First alert", colFlags:"Red flags (codes)",
+  total:"Scenarios loaded", progress:"Analysing ", of:" of ", done:"Done.",
+  noJson:"No .json file found in the selection.", skipped:" file(s) skipped (not .json).", failedN:" scenario(s) could not be analysed (marked ERR).",
+  cmpTitle:"Comparison with expected file", cmpVerdict:"verdict", cmpType:"type", cmpFirst:"first alert", cmpMissing:"no expected row: ",
+  errCsv:"The CSV file does not look right.", cmpFirstLoad:"Load the scenarios first.",
+  detTitle:"Scenario details ", expected:"expected: ", noMsgs:"(no messages)",
+  tabImp:"Import a conversation", impTitle:"Import a whole conversation",
+  impHint:"In WhatsApp: select the messages, tap Copy and paste here. Or open an exported file (.txt). The conversation stays on this computer.",
+  impPh:"Paste the conversation copied from WhatsApp, Telegram or another app here...", impOpen:"Open the exported conversation (.txt)",
+  impFile:"File loaded: ", impQ:"Which of these are you?", impChan:"Channel:", impKnown:"It is from my contacts",
+  impPrev:"This is how I understood the conversation (you on the right, in grey):", impGo:"Check the conversation", impGoSingle:"Check the received message",
+  impMore:"Only the first messages are shown.",
+  impSelNone:"First choose which participant is you.",
+  impOne:"I found only one participant. That is fine: I can check the text as a message received from the other person.",
+  impPlain:"I did not recognise a conversation with several participants. I can check the text as a single message received from the other person.",
+  impEmpty:"No messages found in the text. Paste the conversation or choose a .txt file.",
+  impLong:"The text is very long. Please paste only the important part.",
+  impMsgs:" messages",
+  fmt_whatsapp_web:"Format recognised: WhatsApp (copied from WhatsApp Web or desktop)", fmt_whatsapp_android:"Format recognised: WhatsApp (Android export)",
+  fmt_whatsapp_ios:"Format recognised: WhatsApp (iPhone export)", fmt_telegram:"Format recognised: Telegram",
+  fmt_generic:"Format recognised: lines like \"Name: message\"", fmt_plain:"Format: plain text"
+ }
+};
+var FLAGS = {
+ RF_CODE_REQUEST:["Vrea un cod primit pe telefon","Wants a code sent to your phone"],
+ RF_REMOTE_ACCESS:["Vrea acces la calculatorul sau telefonul dumneavoastră","Wants access to your computer or phone"],
+ RF_DATA_REQUEST:["Cere date personale sau ale cardului","Asks for personal or card data"],
+ RF_PAYMENT_REQUEST:["Cere bani","Asks for money"],
+ RF_SUSPICIOUS_CONTACT:["Link sau adresă care nu este cea oficială","Link or address that is not the official one"],
+ RF_NEW_NUMBER:["Spune că are un număr nou","Says it has a new number"],
+ RF_SECRECY:["Vă cere să păstrați secretul","Asks you to keep it secret"],
+ RF_TOO_GOOD:["Promite ceva prea frumos ca să fie adevărat","Promises something too good to be true"],
+ RF_IMPERSONATION:["Se dă drept altcineva (bancă, firmă, autoritate)","Pretends to be someone else (bank, firm, authority)"],
+ RF_URGENCY:["Vă grăbește","Rushes you"],
+ RF_THREAT:["Vă amenință","Threatens you"],
+ RF_EMOTIONAL_PRESSURE:["Apasă pe sentimente","Plays on your feelings"],
+ RF_CHANNEL_SWITCH:["Vă mută pe alt canal de discuție","Moves you to another chat channel"]
+};
+var CHIPS = [
+ ["RF_PAYMENT_REQUEST","💰","Bani","Money"],
+ ["RF_DATA_REQUEST","🪪","Date personale","Personal data"],
+ ["RF_CODE_REQUEST","🔢","Cod","Code"],
+ ["RF_REMOTE_ACCESS","🖥️","Acces la calculator","Computer access"],
+ ["RF_URGENCY","⏱️","Grabă","Hurry"],
+ ["RF_SECRECY","🤫","Secret","Secrecy"]
+];
+var ICON = {SAFE:"✔", SUSPICIOUS:"⚠", SCAM:"✖"};
+var EMO = {SAFE:"🟢", SUSPICIOUS:"🟠", SCAM:"🔴"};
+var VCOLOR = {SAFE:"#15803d", SUSPICIOUS:"#b45309", SCAM:"#b91c1c"};
+
+var lang = "ro";
+try{ var sl = localStorage.getItem("sb_lang"); if(sl==="en"||sl==="ro") lang=sl; }catch(e){}
+function t(k){ return (S[lang][k]!==undefined?S[lang][k]:S.ro[k]) || k; }
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined&&text!==null) e.textContent=text; return e; }
+function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); }
+function flagName(c){ var f=FLAGS[c]; return f? f[lang==="ro"?0:1] : c; }
+
+var state = { health:null, last:null, lastKnown:false, rows:[], expected:null, cmpInfo:null, busy:false };
+
+/* ---------- i18n ---------- */
+function applyLang(){
+  document.documentElement.lang = lang;
+  var i, n, ns = document.querySelectorAll("[data-i]");
+  for(i=0;i<ns.length;i++) ns[i].textContent = t(ns[i].getAttribute("data-i"));
+  ns = document.querySelectorAll("[data-ph]");
+  for(i=0;i<ns.length;i++) ns[i].placeholder = t(ns[i].getAttribute("data-ph"));
+  $("btnLang").textContent = lang==="ro" ? "EN" : "RO";
+  renderHealth();
+  if(state.last) renderResult(state.last, state.lastKnown);
+  renderTable(); renderSummary(); renderImport();
+  if(state.expected) showCompare();
+}
+
+/* ---------- health ---------- */
+function renderHealth(){
+  var h = state.health, d = $("dot"), k;
+  if(h===null){ k="health_unk"; d.className="dot"; }
+  else if(h===false){ k="health_off"; d.className="dot off"; }
+  else if(h.llm){ k="health_llm"; d.className="dot on"; }
+  else { k="health_rules"; d.className="dot rules"; }
+  $("statusTxt").textContent = t(k);
+}
+function pollHealth(){
+  fetch("/api/health",{cache:"no-store"}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+   .then(function(j){ state.health = {llm:!!(j&&j.llm), model:j&&j.model}; renderHealth(); })
+   .catch(function(){ state.health=false; renderHealth(); });
+}
+
+/* ---------- API ---------- */
+function postJSON(url, body){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+   .then(function(r){
+      if(!r.ok){ var e=new Error("http"); e.kind="bad"; throw e; }
+      return r.json();
+   }, function(){ var e=new Error("net"); e.kind="server"; throw e; })
+   .then(function(j){
+      if(!j || typeof j!=="object" || !j.verdict){ var e=new Error("shape"); e.kind="bad"; throw e; }
+      return j;
+   });
+}
+function errMsg(e){ return t(e && e.kind==="server" ? "errServer" : "errBad"); }
+
+/* ---------- check tab ---------- */
+var loadedScenario = null;
+function showCheckMsg(m){ var b=$("checkMsg"); if(!m){ b.classList.add("hidden"); return; } b.textContent=m; b.classList.remove("hidden"); }
+
+function isScenario(o){ return o && typeof o==="object" && !Array.isArray(o) && Array.isArray(o.messages); }
+
+$("btnFile").onclick = function(){ $("fileOne").value=""; $("fileOne").click(); };
+$("fileOne").onchange = function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  showCheckMsg("");
+  var rd = new FileReader();
+  rd.onload = function(){
+    var o; try{ o = JSON.parse(rd.result); }catch(e){ showCheckMsg(t("errJson")); return; }
+    if(!isScenario(o)){ showCheckMsg(t("errJson")); return; }
+    if(!o.messages.length){ showCheckMsg(t("errNoMsgs")); return; }
+    loadedScenario = o;
+    var n=$("fileNote"); n.textContent = t("fileNote")+f.name; n.classList.remove("hidden");
+    $("txt").value = "";
+  };
+  rd.onerror = function(){ showCheckMsg(t("errJson")); };
+  rd.readAsText(f);
+};
+$("txt").addEventListener("input", function(){ if(this.value && loadedScenario){ loadedScenario=null; $("fileNote").classList.add("hidden"); } });
+
+$("btnGo").onclick = function(){
+  if(state.busy) return;
+  showCheckMsg("");
+  var p, known = $("known").checked;
+  if(loadedScenario){
+    p = function(){ return postJSON("/api/analyze", loadedScenario); };
+    known = !!(loadedScenario.sender && loadedScenario.sender.known_contact);
+  } else {
+    var txt = $("txt").value.trim();
+    if(!txt){ showCheckMsg(t("errEmpty")); return; }
+    if(txt.length > MAX_CHARS){ showCheckMsg(t("errLong")); return; }
+    p = function(){ return postJSON("/api/analyze-text",{text:txt,channel:"sms",known_contact:known}); };
+  }
+  state.busy = true; $("btnGo").disabled = true;
+  $("btnGo").lastElementChild.textContent = t("checking");
+  p().then(function(r){ state.last=r; state.lastKnown=known; renderResult(r, known, "resultBox"); })
+   .catch(function(e){ showCheckMsg(errMsg(e)); })
+   .then(function(){ state.busy=false; $("btnGo").disabled=false; $("btnGo").lastElementChild.textContent=t("go"); });
+};
+
+function loveCard(r){
+  var flags = Array.isArray(r.red_flags)? r.red_flags : [];
+  var pm = Array.isArray(r.per_message)? r.per_message : [];
+  var isRom = r.scam_type==="ROMANCE" || (flags.indexOf("RF_EMOTIONAL_PRESSURE")>=0 && flags.indexOf("RF_PAYMENT_REQUEST")>=0 && pm.length>1);
+  if(!isRom) return null;
+  var msgs = pm.filter(function(m){ return m.from==="sender"; });
+  var all = msgs.map(function(m){ return lowFold(m.text==null?"":m.text); }).join(" \n ");
+  var half = msgs.slice(0, Math.ceil(msgs.length/2)).map(function(m){ return lowFold(m.text==null?"":m.text); }).join(" \n ");
+  var fl = {}; flags.forEach(function(f){ fl[f]=1; });
+  msgs.forEach(function(m){ (m.new_flags||[]).forEach(function(f){ fl[f]=1; }); });
+  function has(txt, re){ return re.test(txt); }
+  var found = [
+    r.known_contact===false || has(all, /ne-?am cunoscut pe|am gresit numarul|te-?am vazut pe (facebook|instagram|tinder)|te-?am gasit pe|ti-?am vazut profilul|mesaj gresit|numar gresit/),
+    has(half, /te iubesc|iubirea mea|suflet pereche|dragostea mea|sotia mea|sotul meu|mi-?e dor de tine|dragoste la prima|te ador/),
+    has(all, /platforma petrol|platforma|nava|pe mare|misiune|armata|armatei|onu|medic in strainatate|contract|camera nu merge|nu pot vorbi video|fara video|semnal slab|nu pot sa ne vedem|nu putem sa ne vedem|nu pot veni/),
+    !!(fl.RF_CHANNEL_SWITCH || fl.RF_SECRECY) || has(all, /sa nu le spui|nu spune (nimanui|copiilor)|pe whatsapp|pe telegram|pe hangouts|scrie-?mi pe/),
+    !!(fl.RF_PAYMENT_REQUEST || fl.RF_TOO_GOOD) || has(all, /bilet|avion|vama|colet|cadou|spital|operatie|cont blocat|mostenire|card cadou|carduri cadou|bitcoin|crypto|platforma de investitii|investitie/),
+    has(all, /ti-?i dau inapoi|ti le dau inapoi|iti dau inapoi|returnez|vom fi impreuna|viitorul nostru|profit|te rambursez|bogati impreuna/)
+  ];
+  var box = el("div","love"); box.setAttribute("role","region");
+  var h = el("h3",null,t("loveTitle")); box.appendChild(h);
+  var ul = el("ul");
+  found.forEach(function(f,i){
+    var li = el("li", f?"yes":"no");
+    li.appendChild(el("b",null,f?t("loveYes"):t("loveNo")));
+    li.appendChild(el("span",null,t("loveS"+(i+1))));
+    ul.appendChild(li);
+  });
+  box.appendChild(ul);
+  box.appendChild(el("p","big",t("loveBig")));
+  return box;
+}
+function chipsFor(flags){
+  var out=[], i;
+  for(i=0;i<CHIPS.length;i++) if(flags.indexOf(CHIPS[i][0])>=0) out.push(CHIPS[i]);
+  return out;
+}
+function vLabel(r){
+  var v = r.verdict;
+  if(r.label && r.label[lang]) return r.label[lang];
+  return t("v_"+v);
+}
+var curBox = "resultBox";
+function renderResult(r, known, boxId){
+  if(boxId) curBox = boxId;
+  var box = $(curBox); clear(box);
+  var v = (r.verdict==="SAFE"||r.verdict==="SUSPICIOUS"||r.verdict==="SCAM") ? r.verdict : "SUSPICIOUS";
+  var card = el("div","result "+v); card.setAttribute("role","region");
+  var head = el("div","vhead");
+  head.appendChild(el("div","vicon",ICON[v])); head.firstChild.setAttribute("aria-hidden","true");
+  var lab = el("div","vlabel", EMO[v]+" "+vLabel(r)); head.appendChild(lab);
+  card.appendChild(head);
+  var warn = (r.warning && (r.warning[lang]||r.warning.ro)) || "";
+  if(warn){ var w = el("div","warning",warn); w.id="warnText"; card.appendChild(w); }
+  var flags = Array.isArray(r.red_flags)? r.red_flags : [];
+  card.appendChild(el("div","chips-title",t("wants")));
+  var ch = chipsFor(flags), cw = el("div","chips");
+  if(!ch.length) cw.appendChild(el("span","chip",t("wantsNone")));
+  ch.forEach(function(c){ cw.appendChild(el("span","chip", c[1]+" "+c[lang==="ro"?2:3])); });
+  card.appendChild(cw);
+  var lc = loveCard(r); if(lc) card.appendChild(lc);
+  var acts = el("div","acts");
+  var sp = el("button","btn"); sp.type="button"; sp.appendChild(el("span",null,"🔊 ")); sp.appendChild(el("span",null,t("speak")));
+  sp.onclick = function(){ toggleSpeak(warn, sp, card); };
+  acts.appendChild(sp);
+  var tr = readTrusted(), call;
+  if(tr.number){
+    call = el("a","btn tel","📞 "+t("call")+" ("+(tr.name||tr.number)+")");
+    call.href = "tel:"+tr.number;
+  } else {
+    call = el("button","btn","📞 "+t("call")); call.type="button";
+    call.onclick = function(){ openSettings(); };
+  }
+  acts.appendChild(call);
+  card.appendChild(acts);
+  var vm = el("div","msg hidden"); vm.id="speakMsg"; card.appendChild(vm);
+  if(r.per_message && r.per_message.length){
+    var d = el("details"); d.appendChild(el("summary",null,t("details")));
+    d.appendChild(flagTags(flags));
+    d.appendChild(buildThread(r));
+    if(r.per_message.length>1) d.open = true;
+    card.appendChild(d);
+  } else if(flags.length){
+    var d2 = el("details"); d2.appendChild(el("summary",null,t("details"))); d2.appendChild(flagTags(flags)); card.appendChild(d2);
+  }
+  box.appendChild(card);
+  card.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function flagTags(flags){
+  var wrap = el("div"); wrap.appendChild(el("div","chips-title",t("flagsTitle")));
+  var tg = el("div","tags");
+  flags.forEach(function(f){ tg.appendChild(el("span","tag","• "+flagName(f))); });
+  wrap.appendChild(tg); return wrap;
+}
+
+/* ---------- thread ---------- */
+function setHighlighted(node, text, hl){
+  /* server offsets are Python code points; slice on code points, not UTF-16 units (emoji = 2 units) */
+  var cps = Array.from(text), len = cps.length;
+  function sl(a,b){ return cps.slice(a,b).join(""); }
+  var segs = (Array.isArray(hl)?hl:[]).filter(function(h){ return h && isFinite(h.start) && isFinite(h.end) && h.end>h.start; })
+    .map(function(h){ return {s:Math.max(0,h.start|0), e:Math.min(len,h.end|0), f:h.flag}; })
+    .filter(function(h){ return h.e>h.s; }).sort(function(a,b){ return a.s-b.s || b.e-a.e; });
+  var pos=0;
+  segs.forEach(function(h){
+    if(h.s<pos){ return; }
+    if(h.s>pos) node.appendChild(document.createTextNode(sl(pos,h.s)));
+    var m = el("mark",null,sl(h.s,h.e)); if(h.f) m.title=flagName(h.f); node.appendChild(m);
+    pos=h.e;
+  });
+  if(pos<len) node.appendChild(document.createTextNode(sl(pos)));
+}
+function riskBar(score, verdict){
+  var w = el("div","risk");
+  var bar = el("div","rbar"); bar.setAttribute("role","img");
+  bar.setAttribute("aria-label",t("risk")+" "+score+"/100");
+  var fill = el("div","rfill"); fill.style.width = Math.max(0,Math.min(100,score))+"%";
+  fill.style.background = score>=50?VCOLOR.SCAM : score>=25?VCOLOR.SUSPICIOUS : VCOLOR.SAFE;
+  bar.appendChild(fill);
+  [25,50].forEach(function(x){ var k=el("div","rtick"); k.style.left=x+"%"; bar.appendChild(k); });
+  w.appendChild(bar);
+  var tx = el("div","rtxt"); tx.appendChild(el("span",null,t("risk")+": "+score+"/100")); tx.appendChild(el("span",null,t("thr")));
+  w.appendChild(tx); return w;
+}
+function buildThread(r){
+  var th = el("div","thread");
+  var fa = r.first_alert;
+  (r.per_message||[]).forEach(function(m){
+    var isReader = m.from==="reader";
+    var wrap = el("div","bwrap "+(isReader?"reader":"sender")+((fa!==null&&fa!==undefined&&m.n===fa&&!isReader)?" first":""));
+    if(wrap.classList.contains("first")) wrap.appendChild(el("div","firstlbl","⚠ "+t("firstHere")));
+    wrap.appendChild(el("div","who",(isReader?t("reader"):t("sender"))+" · #"+m.n));
+    var b = el("div","bubble"); setHighlighted(b, String(m.text==null?"":m.text), m.highlights); wrap.appendChild(b);
+    if(m.new_flags && m.new_flags.length){
+      var nf = el("div","tags nf"); m.new_flags.forEach(function(f){ nf.appendChild(el("span","tag","⚠ "+flagName(f))); }); wrap.appendChild(nf);
+    }
+    if(!isReader && typeof m.cumulative_score==="number") wrap.appendChild(riskBar(m.cumulative_score, m.verdict_so_far));
+    th.appendChild(wrap);
+  });
+  if(!th.firstChild) th.appendChild(el("div",null,t("noMsgs")));
+  return th;
+}
+
+/* ---------- speech ---------- */
+var speaking = false;
+function pickVoice(){
+  var vs = window.speechSynthesis.getVoices()||[], want = lang==="ro"?"ro":"en", i, c=null;
+  for(i=0;i<vs.length;i++){ var l=(vs[i].lang||"").toLowerCase().replace("_","-");
+    if(l.indexOf(want)===0 && vs[i].localService){ if(l===(want==="ro"?"ro-ro":"en-us")||l===(want==="ro"?"ro-ro":"en-gb")) return vs[i]; if(!c) c=vs[i]; } }
+  return c;
+}
+function toggleSpeak(text, btn, card){
+  var m = card.querySelector("#speakMsg"); m.classList.add("hidden");
+  if(!("speechSynthesis" in window) || !window.SpeechSynthesisUtterance){ m.textContent=t("noSpeech"); m.classList.remove("hidden"); return; }
+  if(speaking){ window.speechSynthesis.cancel(); speaking=false; btn.lastChild.textContent=t("speak"); return; }
+  if(!text) return;
+  var v = pickVoice();
+  if(!v){ m.textContent=t("noVoice"); m.classList.remove("hidden"); return; }
+  var u = new SpeechSynthesisUtterance(text); u.voice=v; u.lang=v.lang; u.rate=0.9;
+  u.onend = u.onerror = function(){ speaking=false; btn.lastChild.textContent=t("speak"); };
+  speaking=true; btn.lastChild.textContent=t("stopSpeak");
+  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+}
+if("speechSynthesis" in window){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){}; }catch(e){} }
+
+/* ---------- trusted person ---------- */
+function readTrusted(){
+  try{ var o=JSON.parse(localStorage.getItem("sb_trusted")||"null"); if(o && typeof o.number==="string") return {name:String(o.name||""),number:o.number}; }catch(e){}
+  return {name:"",number:""};
+}
+function openSettings(){
+  var tr=readTrusted(); $("tName").value=tr.name; $("tNum").value=tr.number;
+  var d=$("dlgSet"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
+}
+$("btnSettings").onclick = openSettings;
+$("setClose").onclick = function(){ $("dlgSet").close(); };
+$("setSave").onclick = function(){
+  var n = $("tNum").value.replace(/[^\d+]/g,"");
+  if(n.indexOf("+")>0) n = n.replace(/\+/g,"");
+  if(n.replace(/\D/g,"").length<6){ alert(t("badNum")); return; }
+  try{ localStorage.setItem("sb_trusted", JSON.stringify({name:$("tName").value.trim().slice(0,60),number:n})); }catch(e){}
+  $("dlgSet").close(); if(state.last) renderResult(state.last,state.lastKnown);
+};
+$("setClear").onclick = function(){ try{ localStorage.removeItem("sb_trusted"); }catch(e){} $("dlgSet").close(); if(state.last) renderResult(state.last,state.lastKnown); };
+
+/* ---------- tabs / lang ---------- */
+function selectTab(which){
+  var m = {check:["tabCheck","pCheck"], imp:["tabImp","pImp"], dash:["tabDash","pDash"]};
+  Object.keys(m).forEach(function(k){
+    $(m[k][0]).setAttribute("aria-selected", k===which); $(m[k][1]).classList.toggle("hidden", k!==which);
+  });
+}
+$("tabImp").onclick=function(){ selectTab("imp"); };
+$("tabCheck").onclick=function(){ selectTab("check"); };
+$("tabDash").onclick=function(){ selectTab("dash"); };
+$("btnLang").onclick=function(){ lang = lang==="ro"?"en":"ro"; try{ localStorage.setItem("sb_lang",lang); }catch(e){} applyLang(); };
+
+/* ---------- dashboard ---------- */
+function showDashMsg(m){ var b=$("dashMsg"); if(!m){ b.classList.add("hidden"); return; } b.textContent=m; b.classList.remove("hidden"); }
+function idCmp(a,b){ return String(a.id).localeCompare(String(b.id),undefined,{numeric:true}); }
+
+function renderSummary(){
+  var s=$("summary"); clear(s);
+  document.body.classList.toggle("compact", state.rows.length>0);
+  if(!state.rows.length) return;
+  var c={SCAM:0,SUSPICIOUS:0,SAFE:0};
+  state.rows.forEach(function(r){ if(r.res && c[r.res.verdict]!==undefined) c[r.res.verdict]++; });
+  function box(cls,label,n,ic){ var b=el("div","sbox "+cls); b.appendChild(el("small",null,label)); b.appendChild(document.createTextNode((ic?ic+" ":"")+n)); s.appendChild(b); }
+  box("ALL",t("total"),state.rows.length,"");
+  box("SCAM","SCAM",c.SCAM,ICON.SCAM);
+  box("SUSPICIOUS","SUSPICIOUS",c.SUSPICIOUS,ICON.SUSPICIOUS);
+  box("SAFE","SAFE",c.SAFE,ICON.SAFE);
+}
+function vbadge(v){ var b=el("span","vb "+(ICON[v]?v:"ERR"),(ICON[v]||"?")+" "+v); return b; }
+function expectedFor(id){ return state.expected? state.expected[id] : null; }
+
+function renderTable(){
+  var tb=$("tbody"); clear(tb);
+  state.rows.forEach(function(row){
+    var tr=el("tr"); tr.tabIndex=0; tr.setAttribute("role","button");
+    var r=row.res, ex=expectedFor(row.id);
+    function td(content,cls,key,val){
+      var c=el("td",cls||null);
+      if(typeof content==="string") c.textContent=content; else if(content) c.appendChild(content);
+      if(ex && key){ var same = key==="red_flags" ? ex[key].split(";").filter(Boolean).sort().join(";")===String(val).split(";").filter(Boolean).sort().join(";") : ex[key]===val; if(!same){ c.classList.add("diff"); c.title=t("expected")+ex[key]; c.appendChild(document.createTextNode("  ≠ "+(ex[key]===""?"—":ex[key]))); } }
+      tr.appendChild(c); return c;
+    }
+    var flags = r? (r.red_flags||[]).join(";") : "";
+    var fa = r && r.first_alert!=null ? String(r.first_alert) : "";
+    td(row.id,null,null);
+    td(r? vbadge(r.verdict) : vbadge("ERR"),null,"verdict",r?r.verdict:"ERR");
+    td(r? String(r.scam_type||"") : "",null,"scam_type",r?String(r.scam_type||""):"");
+    td(r? String(r.risk_score) : "",null,"risk_score",r?String(r.risk_score):"");
+    td(fa,null,"first_alert",fa);
+    td(flags,"fl","red_flags",flags);
+    var open=function(){ if(r) openDetail(r,row.id); };
+    tr.onclick=open; tr.onkeydown=function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } };
+    tb.appendChild(tr);
+  });
+  var has = state.rows.some(function(r){return r.res;});
+  $("btnCsv").disabled=!has; $("btnCmp").disabled=!has;
+}
+
+function openDetail(r,id){
+  $("detTitle").textContent = t("detTitle")+id;
+  var b=$("detBody"); clear(b);
+  var v=(ICON[r.verdict]?r.verdict:"SUSPICIOUS");
+  var card=el("div","result "+v);
+  var head=el("div","vhead"); var ic=el("div","vicon",ICON[v]); ic.setAttribute("aria-hidden","true"); head.appendChild(ic);
+  head.appendChild(el("div","vlabel",EMO[v]+" "+vLabel(r))); card.appendChild(head);
+  var warn=(r.warning&&(r.warning[lang]||r.warning.ro))||""; if(warn) card.appendChild(el("div","warning",warn));
+  card.appendChild(el("div",null,(r.scam_type||"")+" · "+t("risk")+" "+r.risk_score));
+  card.appendChild(flagTags(r.red_flags||[]));
+  var lc2 = loveCard(r); if(lc2) card.appendChild(lc2);
+  card.appendChild(buildThread(r));
+  b.appendChild(card);
+  var d=$("dlgDetail"); if(d.showModal) d.showModal(); else d.setAttribute("open","");
+}
+$("detClose").onclick=function(){ $("dlgDetail").close(); };
+document.querySelectorAll("dialog").forEach(function(d){ d.addEventListener("click",function(e){ if(e.target===d) d.close(); }); });
+
+/* loading files */
+$("btnFolder").onclick=function(){ $("inFolder").value=""; $("inFolder").click(); };
+$("btnFiles").onclick=function(){ $("inFiles").value=""; $("inFiles").click(); };
+$("inFolder").onchange=function(){ runFiles(Array.prototype.slice.call(this.files)); };
+$("inFiles").onchange=function(){ runFiles(Array.prototype.slice.call(this.files)); };
+
+var drop=$("drop");
+["dragenter","dragover"].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.add("over"); }); });
+["dragleave","drop"].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.remove("over"); }); });
+window.addEventListener("dragover",function(e){ e.preventDefault(); });
+window.addEventListener("drop",function(e){ e.preventDefault(); });
+drop.addEventListener("drop",function(e){
+  var dt=e.dataTransfer; if(!dt) return;
+  var items=dt.items, entries=[], i;
+  if(items && items.length && items[0].webkitGetAsEntry){
+    for(i=0;i<items.length;i++){ var en=items[i].webkitGetAsEntry(); if(en) entries.push(en); }
+    walk(entries).then(runFiles).catch(function(){ runFiles(Array.prototype.slice.call(dt.files)); });
+  } else runFiles(Array.prototype.slice.call(dt.files));
+});
+function walk(entries){
+  var files=[];
+  function one(en){
+    if(en.isFile) return new Promise(function(res){ en.file(function(f){ files.push(f); res(); },function(){ res(); }); });
+    if(en.isDirectory){
+      var rd=en.createReader(), all=[];
+      return new Promise(function(res){
+        (function more(){ rd.readEntries(function(b){ if(!b.length){ res(); return; } all=all.concat(Array.prototype.slice.call(b)); more(); },function(){ res(); }); })();
+      }).then(function(){ return seq(all); });
+    }
+    return Promise.resolve();
+  }
+  function seq(list){ return list.reduce(function(p,en){ return p.then(function(){ return one(en); }); },Promise.resolve()); }
+  return seq(entries).then(function(){ return files; });
+}
+function readText(f){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){res(r.result);}; r.onerror=function(){rej();}; r.readAsText(f); }); }
+
+var dashBusy=false;
+function runFiles(files){
+  if(dashBusy) return;
+  showDashMsg("");
+  var js=files.filter(function(f){ return /\.json$/i.test(f.name); });
+  var skipped=files.length-js.length;
+  if(!js.length){ showDashMsg(t("noJson")); return; }
+  js.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{numeric:true}); });
+  dashBusy=true; state.rows=[]; state.cmpInfo=null; $("cmpOut").textContent="";
+  var bar=$("progBar"), prog=$("prog"), pt=$("progTxt"); prog.classList.remove("hidden"); bar.style.width="0";
+  var failed=0, serverDown=false;
+  js.reduce(function(p,f,i){
+    return p.then(function(){
+      pt.textContent=t("progress")+(i+1)+t("of")+js.length+" ("+f.name+")";
+      if(serverDown){ failed++; return; }
+      return readText(f).then(function(txt){
+        var o; try{ o=JSON.parse(txt); }catch(e){ failed++; state.rows.push({id:f.name.replace(/\.json$/i,""),res:null}); return; }
+        if(!isScenario(o)){ failed++; state.rows.push({id:(o&&o.id)||f.name.replace(/\.json$/i,""),res:null}); return; }
+        return postJSON("/api/analyze",o).then(function(r){
+          state.rows.push({id:String(r.id||o.id||f.name.replace(/\.json$/i,"")),res:r});
+        }).catch(function(e){ failed++; if(e.kind==="server") serverDown=true; state.rows.push({id:String(o.id||f.name),res:null}); });
+      },function(){ failed++; });
+    }).then(function(){
+      bar.style.width=Math.round((i+1)/js.length*100)+"%";
+      state.rows.sort(idCmp); renderTable(); renderSummary();
+    });
+  },Promise.resolve()).then(function(){
+    dashBusy=false; pt.textContent=t("done"); prog.classList.add("hidden"); if(document.body.classList.contains("compact")) pt.textContent="";
+    var m=[]; if(serverDown) m.push(t("errServer")); else if(failed) m.push(failed+t("failedN")); if(skipped) m.push(skipped+t("skipped"));
+    showDashMsg(m.join(" "));
+    if(state.expected) showCompare();
+  });
+}
+
+/* CSV */
+function csvCell(s){ s=String(s); return /[",\n\r]/.test(s)? '"'+s.replace(/"/g,'""')+'"' : s; }
+$("btnCsv").onclick=function(){
+  var lines=["id,verdict,scam_type,risk_score,first_alert,red_flags"];
+  state.rows.forEach(function(row){ var r=row.res; if(!r) return;
+    lines.push([row.id,r.verdict,r.scam_type||"",r.risk_score,r.first_alert==null?"":r.first_alert,(r.red_flags||[]).join(";")].map(csvCell).join(","));
+  });
+  var blob=new Blob([lines.join("\n")+"\n"],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="results.csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+};
+function parseCsv(text){
+  var rows=[],row=[],cur="",q=false,i,c;
+  text=text.replace(/^﻿/,"");
+  for(i=0;i<text.length;i++){ c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(cur);cur=""; }
+    else if(c==="\n"||c==="\r"){ if(c==="\r"&&text[i+1]==="\n") i++; row.push(cur);cur=""; rows.push(row);row=[]; }
+    else cur+=c;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){ return r.length>1 || (r[0]&&r[0].trim()); });
+}
+$("btnCmp").onclick=function(){ if(!state.rows.length){ showDashMsg(t("cmpFirstLoad")); return; } $("inCsv").value=""; $("inCsv").click(); };
+$("inCsv").onchange=function(){
+  var f=this.files&&this.files[0]; if(!f) return; showDashMsg("");
+  readText(f).then(function(txt){
+    var rows=parseCsv(txt); if(rows.length<2) throw 0;
+    var h=rows[0].map(function(x){return x.trim().toLowerCase();});
+    var ix={}; ["id","verdict","scam_type","risk_score","first_alert","red_flags"].forEach(function(k){ ix[k]=h.indexOf(k); });
+    if(ix.id<0||ix.verdict<0) throw 0;
+    var ex={};
+    rows.slice(1).forEach(function(r){ var o={}; for(var k in ix) o[k]=ix[k]>=0?(r[ix[k]]||"").trim():""; ex[o.id]=o; });
+    state.expected=ex; renderTable(); showCompare();
+  }).catch(function(){ showDashMsg(t("errCsv")); });
+};
+function showCompare(){
+  var out=$("cmpOut"), ok={verdict:0,scam_type:0,first_alert:0}, n=0, miss=[];
+  state.rows.forEach(function(row){
+    var ex=state.expected[row.id], r=row.res;
+    if(!ex){ miss.push(row.id); return; }
+    n++;
+    if(!r) return;
+    if(r.verdict===ex.verdict) ok.verdict++;
+    if(String(r.scam_type||"")===ex.scam_type) ok.scam_type++;
+    if((r.first_alert==null?"":String(r.first_alert))===ex.first_alert) ok.first_alert++;
+  });
+  var s=t("cmpTitle")+": "+t("cmpVerdict")+" "+ok.verdict+"/"+n+" · "+t("cmpType")+" "+ok.scam_type+"/"+n+" · "+t("cmpFirst")+" "+ok.first_alert+"/"+n;
+  if(miss.length) s+=" · "+t("cmpMissing")+miss.join(", ");
+  out.textContent=s;
+}
+
+/* ---------- import a conversation ---------- */
+var IMP_MAX = 100000, PREV_MAX = 200;
+var imp = { parsed:null, me:null, seq:0, timer:null, busy:false };
+function impMsg(m){ var b=$("impMsg"); if(!m){ b.classList.add("hidden"); return; } b.textContent=m; b.classList.remove("hidden"); }
+function postPlain(url, body){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+   .then(function(r){ if(!r.ok){ var e=new Error("http"); e.kind="bad"; throw e; } return r.json(); },
+         function(){ var e=new Error("net"); e.kind="server"; throw e; });
+}
+function lowFold(s){ try{ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(); }catch(e){ return String(s).toLowerCase().trim(); } }
+function guessMe(parts){
+  var i, names=["eu","tu","me","you"];
+  for(i=0;i<parts.length;i++) if(names.indexOf(lowFold(parts[i]))>=0) return parts[i];
+  var rem=null; try{ rem=localStorage.getItem("sb_me"); }catch(e){}
+  if(rem && parts.indexOf(rem)>=0) return rem;
+  return null;
+}
+function impMulti(){ return !!(imp.parsed && imp.parsed.participants && imp.parsed.participants.length>=2); }
+function renderImport(){
+  var p = imp.parsed, step=$("impStep");
+  if(!p || !p.messages || !p.messages.length){ step.classList.add("hidden"); return; }
+  step.classList.remove("hidden");
+  var multi = impMulti();
+  $("impFmt").textContent = t("fmt_"+p.format) + " · " + p.messages.length + t("impMsgs");
+  var q=$("impQ"), btns=$("impBtns"); clear(btns);
+  if(multi){
+    q.textContent = t("impQ");
+    p.participants.forEach(function(name){
+      var b=el("button","pbtn"); b.type="button";
+      var sel = name===imp.me;
+      b.setAttribute("aria-pressed", sel?"true":"false");
+      b.appendChild(el("span",null,sel?"\u2714 ":"")); b.appendChild(el("span",null,name));
+      b.onclick=function(){ imp.me=name; try{ localStorage.setItem("sb_me",name); }catch(e){} impMsg(""); renderImport(); };
+      btns.appendChild(b);
+    });
+  } else {
+    q.textContent = t(p.format==="plain" ? "impPlain" : "impOne");
+  }
+  $("impGoTxt").textContent = t(multi ? "impGo" : "impGoSingle");
+  var th=$("impThread"); clear(th);
+  p.messages.slice(0,PREV_MAX).forEach(function(m,i){
+    var isMe = multi && m.author===imp.me;
+    var w = el("div","bwrap "+(isMe?"reader":"sender"));
+    w.appendChild(el("div","who",(isMe?t("reader"):(m.author||t("sender")))+" \u00b7 #"+(i+1)));
+    w.appendChild(el("div","bubble",m.text));
+    th.appendChild(w);
+  });
+  if(p.messages.length>PREV_MAX) th.appendChild(el("div","hint",t("impMore")));
+}
+function impParse(){
+  var txt = $("impTxt").value, my = ++imp.seq;
+  impMsg(""); clear($("impResult"));
+  if(!txt.trim()){ imp.parsed=null; renderImport(); return; }
+  if(txt.length>IMP_MAX){ imp.parsed=null; renderImport(); impMsg(t("impLong")); return; }
+  postPlain("/api/parse-chat",{text:txt}).then(function(j){
+    if(my!==imp.seq) return;
+    if(!j || !Array.isArray(j.messages) || !Array.isArray(j.participants)){ var e=new Error("shape"); e.kind="bad"; throw e; }
+    imp.parsed = j;
+    imp.me = j.participants.length>=2 ? guessMe(j.participants) : null;
+    if(!j.messages.length) impMsg(t("impEmpty"));
+    renderImport();
+  }).catch(function(e){ if(my!==imp.seq) return; imp.parsed=null; renderImport(); impMsg(errMsg(e)); });
+}
+$("impTxt").addEventListener("input", function(){
+  $("impNote").classList.add("hidden");
+  imp.seq++; imp.parsed=null; renderImport();
+  clearTimeout(imp.timer); imp.timer=setTimeout(impParse,350);
+});
+$("impFileBtn").onclick=function(){ $("impFile").value=""; $("impFile").click(); };
+$("impFile").onchange=function(){
+  var f=this.files&&this.files[0]; if(!f) return;
+  readText(f).then(function(txt){
+    $("impTxt").value=txt;
+    var n=$("impNote"); n.textContent=t("impFile")+f.name; n.classList.remove("hidden");
+    impParse();
+  }).catch(function(){ impMsg(t("errBad")); });
+};
+$("impGo").onclick=function(){
+  if(imp.busy || !imp.parsed) return;
+  impMsg("");
+  var multi=impMulti();
+  if(multi && imp.me===null){ impMsg(t("impSelNone")); return; }
+  var known=$("impKnown").checked;
+  imp.busy=true; $("impGo").disabled=true; $("impGoTxt").textContent=t("checking");
+  postPlain("/api/analyze-chat",{text:$("impTxt").value,me:multi?imp.me:null,channel:$("impChan").value,known_contact:known})
+   .then(function(r){
+      if(!r || typeof r!=="object" || !r.verdict){ var e=new Error("shape"); e.kind="bad"; throw e; }
+      state.last=r; state.lastKnown=known; renderResult(r, known, "impResult");
+   })
+   .catch(function(e){ impMsg(errMsg(e)); })
+   .then(function(){ imp.busy=false; $("impGo").disabled=false; $("impGoTxt").textContent=t(impMulti()?"impGo":"impGoSingle"); });
+};
+
+/* ---------- start ---------- */
+applyLang(); pollHealth(); setInterval(pollHealth,20000);
+})();
+</script>
+</body>
+</html>

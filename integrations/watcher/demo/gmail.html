@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="sb-demo" content="gmail"><title>Gmail (demo)</title>
+<style>
+body{margin:0;font:16px Segoe UI,Arial,sans-serif;background:#e9edef;display:flex;height:100vh}
+#side{width:290px;background:#fff;border-right:1px solid #ccc;overflow:auto;flex:none}
+.legend{font-size:12px;color:#666;padding:10px;border-top:1px solid #eee}.legend div{margin-bottom:4px}
+.row{display:block;padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;color:inherit;text-decoration:none}
+.row .n{font-weight:600;display:block}.row .p{display:block;color:#555;font-size:14px}
+.unreadmark{background:#25d366;color:#fff;border-radius:10px;padding:0 7px;font-size:12px;float:right}
+#side h1{font-size:15px;margin:0;padding:12px;background:#222;color:#fff}
+#list button{display:block;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #eee;background:#fff;font:inherit;cursor:pointer}
+#list button small{display:block;color:#666;margin-top:2px}
+#list button.on{background:#d9fdd3}
+.pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:70%;padding:8px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 1px #0002}
+.out{align-self:flex-end;background:#d9fdd3}
+.hd{padding:12px 16px;background:#f0f2f5;font-weight:600;border-bottom:1px solid #ccc}
+
+</style></head><body>
+<div id="side"><h1>Gmail (demo) - conversații de probă</h1><table role="grid" style="width:100%"><tbody id="list"></tbody></table><div class="legend"><div>1. Curier Rapid: expeditor necunoscut, taxă pe link</div><div>2. Clinica Sănătatea: fir cu răspuns anterior, mesaj obișnuit</div><div>3. Dan Ionescu: cunoscut (ai mai răspuns) care cere un cod</div></div></div>
+<div class="pane"><div class="hd"><a aria-label="Google Account: Elena Popescu (elena.test@example.com)" href="#SignOutOptions">Elena P.</a></div><div role="main" class="msgs" id="m"><h2 class="hP" id="t"></h2></div></div>
+<script>
+const CONVS=[{"label": "Curier Rapid", "subject": "Coletul dvs. nu a putut fi livrat", "sender": ["Curier Rapid", "suport@curier-rapid-colet.example"], "note": "expeditor necunoscut, taxă pe link", "msgs": [["s", "Stimată doamnă, coletul dumneavoastră este blocat în depozit. Pentru reprogramare achitați o taxă de 7,50 lei: http://colet-reprogramare.example/plata. Dacă nu plătiți în 24 de ore, coletul va fi returnat."]]}, {"label": "Clinica Sănătatea", "subject": "Programare analize", "sender": ["Clinica Sănătatea", "programari@clinica-sanatatea.example"], "note": "fir cu răspuns anterior, mesaj obișnuit", "msgs": [["s", "Bună ziua, vă confirmăm programarea de marți la ora 9:30. Vă rugăm să veniți pe nemâncate."], ["r", "Mulțumesc, voi veni."], ["s", "Vă așteptăm. O zi bună!"]]}, {"label": "Dan Ionescu", "subject": "Fotografii", "sender": ["Dan Ionescu", "dan.ionescu@exemplu.example"], "note": "cunoscut (ai mai răspuns) care cere un cod", "msgs": [["s", "Ți-am trimis pozele de la nuntă."], ["r", "Mulțumesc, Dane, sunt superbe!"], ["s", "Cu plăcere. Apropo, mi-am pierdut accesul la contul de e-mail. Ți-a venit un cod de verificare pe telefon? Trimite-mi-l, te rog, e urgent."]]}];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function ROW(c,p){const r=el("tr","zA zE");r.setAttribute("role","row");const td=el("td","");td.style.padding="10px 12px";
+const w=el("div","yW");const s=el("span","zF",c.sender[0]);s.setAttribute("email",c.sender[1]);s.setAttribute("name",c.sender[0]);w.appendChild(s);td.appendChild(w);
+const sub=el("span","bog",c.subject);sub.style.fontWeight="600";td.appendChild(sub);td.appendChild(el("span","y2"," - "+p));r.appendChild(td);r.style.cursor="pointer";return r}
+function READ(r){r.classList.remove("zE");r.classList.add("yO")}
+function render(c){document.getElementById("t").textContent=c.subject;
+const m=document.getElementById("m");Array.from(m.querySelectorAll(".adn")).forEach(e=>e.remove());
+c.msgs.forEach(([w,x])=>{const a=el("div","adn b");const h3=el("h3","");const sp=el("span","gD",w=="r"?"eu":c.sender[0]);
+sp.setAttribute("email",w=="r"?"elena.test@example.com":c.sender[1]);sp.setAttribute("name",w=="r"?"eu":c.sender[0]);h3.appendChild(sp);a.appendChild(h3);
+const body=el("div","a3s aiL");body.appendChild(el("div","",x));
+if(w=="s"){const q=el("div","gmail_quote","Pe luni, 2 iun., cineva a scris: text vechi citat");body.appendChild(q)}
+a.appendChild(body);m.appendChild(a)})}
+function lastS(c){for(let i=c.msgs.length-1;i>=0;i--)if(c.msgs[i][0]=="s")return c.msgs[i][1];return ""}
+const list=document.getElementById("list");
+const ROWS=CONVS.map((c)=>{const r=ROW(c,lastS(c));r.addEventListener("click",(e)=>{e.preventDefault();READ(r);render(c)});list.appendChild(r);return r});
+const q=location.search.match(/c=([0-9])/);if(q)ROWS[+q[1]].click();
+</script></body></html>
