@@ -641,7 +641,7 @@ function riskBar(score, verdict){
   bar.appendChild(fill);
   [25,50].forEach(function(x){ var k=el("div","rtick"); k.style.left=x+"%"; bar.appendChild(k); });
   w.appendChild(bar);
-  var tx = el("div","rtxt"); tx.appendChild(el("span",null,t("risk")+": "+score+"/100")); tx.appendChild(el("span",null,t("thr")));
+  var tx = el("div","rtxt"); tx.appendChild(el("span",null,t("risk")+": "+score+"/100 · ")); tx.appendChild(el("span",null,t("thr")));
   w.appendChild(tx); return w;
 }
 function buildThread(r){

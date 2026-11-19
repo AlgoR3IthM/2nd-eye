@@ -230,7 +230,7 @@ MONEY = (r"(?:taxa\w*|taxe\w*|\d[\d.,]*\s*(?:de\s+)?(?:lei|ron|euro|eur|€|\$|u
          r"crypto|criptomonede|usdt|card(?:uri)? cadou|paysafe|vouchere?)")
 PAY_VERB = (r"(?:achitati|achita|achiti|platiti|plateste|platesti|plati|transferati|transfera|transferi|virati|vireaza|virezi|"
             r"depuneti|depune|depui|alimentati|alimenteaza|incarcati|incarca|trimiteti|trimite|trimiti|trimite-mi|trimiteti-mi|"
-            r"da-mi|dati-mi|imprumuta\w*|investiti|investeste|investesti)")
+            r"da-mi|dati-mi|da mi(?![- ]?a\b)|dami|dati mi|da-ne|dati-ne|imprumuta\w*|investiti|investeste|investesti)")
 # a sum of money with its currency: "1000 eur", "1.850 lei", "500 de euro", "1000€", "$200"
 AMOUNT = (r"(?:\d[\d.,]*\s*(?:de\s+)?(?:(?:lei|ron|euro?|usd|dolari)\b|€|\$)|[€$]\s*\d|\b\d+(?:[.,]\d+)?\s*k\b|"
           # sums written as words: "doua sute cincizeci de lei", "o mie de lei", "zece mii"

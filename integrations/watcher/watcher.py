@@ -272,7 +272,7 @@ class Bridge:
             sender = dict(sc.get("sender") or {})
             known = bool(sc.get("known_contact")) or self.trusted.has(service, sender)
             sender["known_contact"] = known
-            sc.update({"id": service + "-watcher", "sender": sender, "known_contact": known})
+            sc.update({"id": service + "-watcher", "sender": sender, "known_contact": known, "live_stranger": not known})
             q = []
             if known:
                 q.append("trust_gate=true")

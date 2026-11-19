@@ -308,7 +308,7 @@ def build_scenario(msgs: list[dict], known: bool, sid: str) -> dict | None:
         return None                       # no-content system mail
     s = parties[0]
     sender = {"name": s["name"] or s["address"], "address": s["address"], "known_contact": known}
-    return {"id": sid, "channel": "email", "known_contact": known, "sender": sender,
+    return {"id": sid, "channel": "email", "known_contact": known, "sender": sender, "live_stranger": not known,
             "messages": [{"n": i + 1, "from": f, "text": t} for i, (f, t) in enumerate(rows)]}
 
 

@@ -117,7 +117,13 @@ def _clean(scenario):
     sid = s.get("id")
     return {"id": sid if isinstance(sid, (str, int)) else None, "channel": channel,
             "sender": {"name": sender.get("name"), "address": sender.get("address"), "known_contact": known},
-            "known_contact": known, "messages": msgs}
+            "known_contact": known, "messages": msgs,
+            # set only by the live watchers: an unknown number / address the user has never saved
+            "live_stranger": bool(s.get("live_stranger")) and not known}
+
+
+# live watchers: a stranger who asks for money, data, a code or remote access is a new number + suspicious contact
+LIVE_ASKS = {"RF_PAYMENT_REQUEST", "RF_DATA_REQUEST", "RF_CODE_REQUEST", "RF_REMOTE_ACCESS"}
 
 
 # links contacts.py does not recognise: reserved/demo top-level domains and explicit http(s):// addresses
@@ -478,6 +484,13 @@ def _analyze(sc, use_llm, trust_gate):
                         src["llm"].append(code)
                     if span[1] > span[0]:
                         hls.append({"start": span[0], "end": span[1], "flag": code})
+                if sc.get("live_stranger") and (codes & LIVE_ASKS):
+                    for xc in (["RF_NEW_NUMBER"] if channel != "email" else []) + ["RF_SUSPICIOUS_CONTACT"]:
+                        if xc not in codes:
+                            codes.add(xc)
+                            msg_codes.append(xc)
+                            if xc not in src["contacts"]:
+                                src["contacts"].append(xc)
             new = []
             for c in msg_codes:
                 if c not in seen:

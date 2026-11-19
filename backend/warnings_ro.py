@@ -25,7 +25,7 @@ REASONS = [  # (flag, ro, en) in order of importance
     ("RF_CODE_REQUEST", "vă cere un cod primit prin SMS", "asks for a code you received by SMS"),
     ("RF_DATA_REQUEST", "vă cere datele cardului sau date personale", "asks for your card or personal details"),
     ("RF_PAYMENT_REQUEST", "vă cere bani", "asks you for money"),
-    ("RF_SUSPICIOUS_CONTACT", "trimite o adresă de internet falsă", "sends a fake web address"),
+    ("RF_SUSPICIOUS_CONTACT", "vine de la un expeditor sau o adresă nesigură", "comes from an untrusted sender or address"),
     ("RF_SECRECY", "vă cere să păstrați secretul", "asks you to keep it secret"),
     ("RF_TOO_GOOD", "vă promite bani sau premii prea frumoase ca să fie adevărate", "promises money or prizes that are too good to be true"),
     ("RF_THREAT", "încearcă să vă sperie", "tries to frighten you"),
