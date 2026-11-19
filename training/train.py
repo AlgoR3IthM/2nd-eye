@@ -36,6 +36,18 @@ def collate(b, pad):
     return {"input_ids": ids, "labels": lab, "attention_mask": att}
 
 
+class LeanTrainer(Trainer):
+    """Loss on completion tokens only, computed on just those positions (avoids the 2.4k x 152k logits tensor that spilled out of VRAM)."""
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        inner = model.base_model.model
+        h = inner.model(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]).last_hidden_state[:, :-1]
+        lab = inputs["labels"][:, 1:]
+        m = lab != -100
+        logits = inner.lm_head(h[m]).float()
+        loss = torch.nn.functional.cross_entropy(logits, lab[m])
+        return (loss, None) if return_outputs else loss
+
+
 class Log(TrainerCallback):
     def on_log(self, args, state, control, logs=None, **kw):
         if logs:
@@ -69,7 +81,7 @@ def main():
                              logging_steps=1, save_strategy="no", report_to=[], gradient_checkpointing=True,
                              gradient_checkpointing_kwargs={"use_reentrant": False}, optim="paged_adamw_8bit", weight_decay=0.0,
                              remove_unused_columns=False, dataloader_num_workers=0, seed=0)
-    tr = Trainer(model=model, args=args, train_dataset=DS(data), data_collator=lambda b: collate(b, tok.pad_token_id), callbacks=[Log()])
+    tr = LeanTrainer(model=model, args=args, train_dataset=DS(data), data_collator=lambda b: collate(b, tok.pad_token_id), callbacks=[Log()])
     t0 = time.time()
     tr.train()
     model.save_pretrained(OUT)

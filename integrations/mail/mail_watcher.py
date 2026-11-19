@@ -711,6 +711,9 @@ def run(a, address: str, password: str) -> None:
                                     pending.add(t)
                     queue = sorted(pending, key=lambda t: int(t), reverse=True)
                 first = False
+                # alerts may flow while the start-up scan runs (newest thread first); old mail is still not
+                # replayed because each alert carries the date of its newest mail and the notifier skips old ones
+                info["ready"] = True
                 info["state"] = f"conectat · verific la {a.interval} s"
                 for t in queue:
                     if t not in pending:

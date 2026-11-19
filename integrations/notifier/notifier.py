@@ -355,8 +355,8 @@ def poll_loop(source, interval, emit):
             seen.add(a.get("id"))
             if a.get("verdict") not in TITLES:
                 continue
-            if first and not is_recent(a.get("time")):
-                continue  # old alerts from before startup: do not replay
+            if not is_recent(a.get("time")):
+                continue  # old mail found by a start-up scan, or alerts from before startup: do not pop up
             emit(a)
         first = False
         time.sleep(interval)
