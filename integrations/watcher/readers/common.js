@@ -411,7 +411,7 @@
   function scheduleList(ms) {
     if (!CFG.list) return;
     clearTimeout(listTimer);
-    listTimer = setTimeout(pollList, ms === undefined ? 2500 : ms);
+    listTimer = setTimeout(pollList, ms === undefined ? 500 : ms);
   }
 
   function scenarioOf(c) {

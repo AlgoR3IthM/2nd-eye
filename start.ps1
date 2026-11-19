@@ -104,13 +104,13 @@ if (-not $apiAlready) {
 
 # ---------------------------------------------------------------- 6. Watchers and alert window
 Say "[3/4] Watching messages..."
-if (-not (Running "watcher\.py")) { StartHidden $Py @("integrations\watcher\watcher.py", "--services", "whatsapp") "whatsapp" }
+if (-not (Running "watcher\.py")) { StartHidden $Py @("integrations\watcher\watcher.py", "--services", "whatsapp", "--poll", "2") "whatsapp" }
 Say "      WhatsApp: unknown numbers are checked in the background" "Green"
 if ($HaveGmail) {
-    if (-not (Running "mail_watcher\.py")) { StartHidden $Py @("-u", "integrations\mail\mail_watcher.py", "--days", "1", "--max-threads", "12") "gmail" }
-    Say "      Gmail: new mail is checked every 30 seconds" "Green"
+    if (-not (Running "mail_watcher\.py")) { StartHidden $Py @("-u", "integrations\mail\mail_watcher.py", "--days", "1", "--max-threads", "12", "--interval", "2") "gmail" }
+    Say "      Gmail: new mail is checked every 2 seconds" "Green"
 } else { Say "      Gmail: skipped (no app password)" "Yellow" }
-if (-not (Running "notifier\.py")) { Start-Process $Pyw -ArgumentList "integrations\notifier\notifier.py" -WorkingDirectory $Root }
+if (-not (Running "notifier\.py")) { Start-Process $Pyw -ArgumentList "integrations\notifier\notifier.py","--interval","1" -WorkingDirectory $Root }
 Say "      Alert window: on" "Green"
 
 # ---------------------------------------------------------------- 7. Web page
