@@ -45,8 +45,11 @@ cd mobile/engine && uvicorn server:app --port 8000      # binds 127.0.0.1 by def
 ## Known gaps (found 2026-11-23, not fixed)
 
 1. **The on-device model is not built into the APK.** `CMakeLists.txt` expects a `llama.cpp/` source folder next to it, which
-   is not in the project, and `app/build.gradle.kts` has no `externalNativeBuild` block. The release APK built at the hackathon
-   contains no `libscamshield_llm.so`, so loading the model fails (caught) and the app runs on rules + catalog only.
+   is not in the project, and `app/build.gradle.kts` has no `externalNativeBuild` block. A native build was attempted at the
+   hackathon, but it crashed in CMake configure with `NoSuchMethodError: Project.exec(Action)`: the Android Gradle Plugin 8.7.2
+   does not work with the Gradle 9.6 wrapper (Gradle 9 removed `Project.exec`). Neither the release nor the debug APK contains
+   `libscamshield_llm.so`, so loading the model fails (caught) and the app runs on rules + catalog only. Fix: use Gradle 8.x with
+   AGP 8.7 (or a newer AGP that supports Gradle 9), vendor llama.cpp under `app/src/main/cpp/llama.cpp/`, add `externalNativeBuild`.
 2. **Prompt mismatch.** The phone's prompt (ChatML, Romanian system prompt) asks for `{"verdict", "scam_type", "warning_ro"}`,
    but the model was trained on the Alpaca prompt above, whose answers have no `verdict` key. The app reads a missing
    `verdict` as SAFE, so the model would likely never raise an alert on the phone. Fix: send the same prompt as `engine.py`
