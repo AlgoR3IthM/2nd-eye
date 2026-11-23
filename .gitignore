@@ -18,3 +18,12 @@ integrations/watcher/trusted.json
 integrations/mail/trusted.txt
 integrations/mail/state/
 Cerinte/test_set/
+
+# AI assistant instruction files: never commit
+AI.md
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+.claude/
+.cursor/
+.github/copilot-instructions.md

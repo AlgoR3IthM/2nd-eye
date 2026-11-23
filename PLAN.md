@@ -160,7 +160,7 @@ Fusion rule: a flag is accepted if a rule or the contact checker finds it; an LL
 quote really occurs in that message **and** it passes the per-flag threshold in `calibration.json`. The genuine-message guard overrides all.
 The app must work fully with the LLM switched off (`use_llm=False`) — that is the fallback if LM Studio dies on stage.
 
-## 4. Files and owners (one owner per file — see AI.md)
+## 4. Files and owners (one owner per file)
 
 | File | Owner | Purpose |
 |---|---|---|
@@ -171,7 +171,7 @@ The app must work fully with the LLM switched off (`use_llm=False`) — that is 
 | `integrations/watcher/*` (`watcher.py`, `readers/*.js`, `demo/*`, `README.md`) | WATCHER | Chromium instance + one reader per service |
 | `integrations/notifier/*` (`notifier.py`, `start_all.ps1`, `install_autostart.ps1`, `uninstall_autostart.ps1`) | NOTIFIER | Windows toast (low-battery style) for each SCAM/SUSPICIOUS alert from `127.0.0.1:8010/alerts.json`; autostart at sign-in |
 | Android notification app | teammate (human) | Same alerts, on the phone |
-| `PLAN.md`, `AI.md`, `PITCH.md` | humans / lead | |
+| `PLAN.md`, `PITCH.md` | humans / lead | |
 
 `python backend/evaluate.py` must print 11/11 on verdict, type, first alert (with and without `--no-llm`).
 

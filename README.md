@@ -1,5 +1,26 @@
 # 2nd Eye (Scam Shield) by AlgoR3IthM
 
+A local, privacy-first scam detector for elderly Romanian speakers: it reads WhatsApp, Gmail or pasted messages, scores them
+message by message and shows a plain-Romanian warning. Built in one day at the Scam Shield hackathon (19 November 2026) by
+**[raduedu](https://github.com/raduedu), [mara488](https://github.com/mara488) and [Moghedien-ux](https://github.com/Moghedien-ux)**,
+equal co-authors (see [AUTHORS.md](AUTHORS.md)). Released under the [MIT License](LICENSE).
+
+## Demo: Secret Test Set results
+
+![Results dashboard on the 17-scenario Secret Test Set: 11 SCAM, 2 SUSPICIOUS, 4 SAFE](demo/test_set_dashboard.png)
+
+Our submitted run on the organisers' Secret Test Set (T01–T17): **11 SCAM, 2 SUSPICIOUS, 4 SAFE**, each flagged scenario with a
+scam type and the first message where the running score reaches 25. We never received the official expected labels, so no
+accuracy figure is claimed. Raw output: [`demo/test_set_results.csv`](demo/test_set_results.csv).
+Open [`demo/index.html`](demo/index.html) in a browser for a small interactive version (filter by verdict, click a scenario to see
+its red flags in the app's own Romanian wording). It needs no server, no model and no scenario text.
+
+## Docs
+
+- [docs/TRAINING.md](docs/TRAINING.md): the QLoRA fine-tune of the local model, what ran and why it was not shipped.
+- [docs/DATASETS.md](docs/DATASETS.md): every dataset, its source, and which ones were kept out of training.
+- `PLAN.md` (design contract and scoring), `PITCH.md` (presentation), `MERGE.md` (merging with the Android work).
+
 ## Run
 
 **Double-click `START.bat`.** That is all. The first time it sets up what is missing (Python environment, asks for the
@@ -31,7 +52,7 @@ Manual start: `.venv\Scripts\python.exe -m uvicorn backend.server:app --host 0.0
 
 ## Does any message leave your laptop?
 
-No. Analysis runs on this laptop only: the API listens on the local network, and the only outbound connection from the detector is to LM Studio on `localhost:1234` (the code refuses any other host). No cloud AI is used at runtime, no message text is logged or written to disk, and there are no analytics or external fonts/CDNs. The The server keeps a small in-memory result memo (at most 256 results, keyed by a SHA-256 of the scenario, the model id and the options) so that the same scenario analysed twice in one session returns the identical result. It lives in RAM only, is never written to disk, disappears when the server stops, and `DELETE /api/memo` clears it at any time. The Telegram bot, if used, only receives messages the user forwards to it and sends them to this same local API.
+No. Analysis runs on this laptop only: the API listens on the local network, and the only outbound connection from the detector is to LM Studio on `localhost:1234` (the code refuses any other host). No cloud AI is used at runtime, no message text is logged or written to disk, and there are no analytics or external fonts/CDNs. The server keeps a small in-memory result memo (at most 256 results, keyed by a SHA-256 of the scenario, the model id and the options) so that the same scenario analysed twice in one session returns the identical result. It lives in RAM only, is never written to disk, disappears when the server stops, and `DELETE /api/memo` clears it at any time. The Telegram bot, if used, only receives messages the user forwards to it and sends them to this same local API.
 
 ## Jury checklist (the 10 minutes before our slot)
 

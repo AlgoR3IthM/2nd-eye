@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2nd Eye — Test Set demo</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#111827;--muted:#374151;--line:#d1d5db;--brand:#0b3d91;--brand-ink:#fff;
+--bad:#7f1d1d;--bad-bg:#fee2e2;--bad-line:#b91c1c;--warn:#78350f;--warn-bg:#fef3c7;--warn-line:#b45309;
+--safe:#14532d;--safe-bg:#dcfce7;--safe-line:#15803d}
+@media (prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#111827;--ink:#f3f4f6;--muted:#cbd5e1;--line:#334155;--brand:#3b6fd1;
+--bad:#fecaca;--bad-bg:#450a0a;--bad-line:#ef4444;--warn:#fde68a;--warn-bg:#422006;--warn-line:#f59e0b;--safe:#bbf7d0;--safe-bg:#052e16;--safe-line:#22c55e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{margin:0 0 4px;font-size:1.8rem}h1 span{color:var(--brand)}
+.sub{color:var(--muted);margin:0 0 20px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.chip{border:2px solid var(--line);border-radius:12px;background:var(--card);padding:10px;text-align:center;cursor:pointer;font:inherit;color:inherit}
+.chip b{display:block;font-size:1.6rem}
+.chip.on{outline:3px solid var(--brand);outline-offset:1px}
+.chip.scam{border-color:var(--bad-line);color:var(--bad)}.chip.sus{border-color:var(--warn-line);color:var(--warn)}.chip.safe{border-color:var(--safe-line);color:var(--safe)}
+.wrap{display:grid;grid-template-columns:1fr 340px;gap:16px}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}.chips{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th{background:var(--brand);color:var(--brand-ink);text-align:left;padding:8px}
+td{padding:7px 8px;border-top:1px solid var(--line)}
+tr.row{cursor:pointer}tr.row:hover,tr.row.sel{background:color-mix(in srgb,var(--brand) 12%,transparent)}
+.v{display:inline-block;border:2px solid;border-radius:999px;padding:0 8px;font-weight:700;font-size:.85rem}
+.v.SCAM{color:var(--bad);background:var(--bad-bg);border-color:var(--bad-line)}
+.v.SUSPICIOUS{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-line)}
+.v.SAFE{color:var(--safe);background:var(--safe-bg);border-color:var(--safe-line)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%}
+.detail{padding:16px}
+.detail h2{margin:0 0 8px;font-size:1.2rem}
+.detail ul{padding-left:18px;margin:8px 0}
+.detail li{margin:4px 0}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.82rem}
+.muted{color:var(--muted);font-size:.9rem}
+.types{padding:16px;border-top:1px solid var(--line)}
+.trow{display:grid;grid-template-columns:160px 1fr 24px;gap:8px;align-items:center;font-size:.85rem;margin:4px 0}
+figure{margin:28px 0 0}figure img{width:100%;border:1px solid var(--line);border-radius:12px}
+figcaption{color:var(--muted);font-size:.9rem;margin-top:6px}
+.tscroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+<h1><span>2nd Eye</span> · Scam Shield — Secret Test Set</h1>
+<p class="sub">Our real output on the 17 organiser scenarios (T01–T17), produced live on 19 Nov 2026 by the local detector
+(rules + official-catalog link checks + Qwen3-4B in LM Studio). Click a row to see why it was flagged.</p>
+
+<div class="chips" id="chips"></div>
+
+<div class="wrap">
+  <div class="card tscroll"><table>
+    <thead><tr><th>ID</th><th>Verdict</th><th>Scam type</th><th>Risk</th><th>First alert</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <div class="card">
+    <div class="detail" id="detail"><p class="muted">Select a scenario.</p></div>
+    <div class="types"><b>Scam types found</b><div id="types"></div></div>
+  </div>
+</div>
+
+<figure>
+  <img src="test_set_dashboard.png" alt="The 2nd Eye web app's results dashboard after loading the Test Set folder: 17 scenarios, 11 SCAM, 2 SUSPICIOUS, 4 SAFE.">
+  <figcaption>Screenshot of the app's own “Tablou de rezultate” tab, taken for the hackathon submission.</figcaption>
+</figure>
+<p class="muted">Raw file: <a href="test_set_results.csv">test_set_results.csv</a>. Scenario texts belong to the organisers and are not published here.</p>
+</main>
+
+<script>
+const CSV = `id,verdict,scam_type,risk_score,first_alert,red_flags
+T01,SCAM,BANK_IMPERSONATION,70,1,RF_IMPERSONATION;RF_URGENCY;RF_SUSPICIOUS_CONTACT;RF_THREAT
+T02,SAFE,NONE,0,,
+T03,SCAM,OTHER,50,1,RF_SUSPICIOUS_CONTACT;RF_PAYMENT_REQUEST
+T04,SCAM,FAMILY_EMERGENCY,100,1,RF_NEW_NUMBER;RF_EMOTIONAL_PRESSURE;RF_IMPERSONATION;RF_THREAT;RF_URGENCY;RF_SECRECY;RF_PAYMENT_REQUEST
+T05,SCAM,ROMANCE,70,7,RF_CHANNEL_SWITCH;RF_PAYMENT_REQUEST;RF_URGENCY;RF_SECRECY
+T06,SCAM,INVESTMENT,80,1,RF_PAYMENT_REQUEST;RF_TOO_GOOD;RF_SUSPICIOUS_CONTACT;RF_CHANNEL_SWITCH
+T07,SAFE,NONE,0,,
+T08,SCAM,PRIZE_LOTTERY,80,3,RF_CHANNEL_SWITCH;RF_SUSPICIOUS_CONTACT;RF_TOO_GOOD;RF_PAYMENT_REQUEST
+T09,SCAM,MARKETPLACE,80,3,RF_PAYMENT_REQUEST;RF_SUSPICIOUS_CONTACT;RF_DATA_REQUEST
+T10,SUSPICIOUS,OTHER,25,1,RF_SUSPICIOUS_CONTACT
+T11,SAFE,NONE,20,,RF_NEW_NUMBER
+T12,SCAM,PRIZE_LOTTERY,75,1,RF_SUSPICIOUS_CONTACT;RF_TOO_GOOD;RF_DATA_REQUEST
+T13,SCAM,INVESTMENT,60,7,RF_SUSPICIOUS_CONTACT;RF_CHANNEL_SWITCH;RF_PAYMENT_REQUEST
+T14,SCAM,BANK_IMPERSONATION,65,5,RF_IMPERSONATION;RF_URGENCY;RF_CODE_REQUEST
+T15,SCAM,COURIER_FEE,85,7,RF_PAYMENT_REQUEST;RF_SUSPICIOUS_CONTACT;RF_SECRECY;RF_THREAT
+T16,SAFE,NONE,15,,RF_IMPERSONATION
+T17,SUSPICIOUS,FAMILY_EMERGENCY,35,3,RF_EMOTIONAL_PRESSURE;RF_URGENCY;RF_CHANNEL_SWITCH`;
+
+// Wording from backend/warnings_ro.py REASONS (RF_IMPERSONATION is not in that list, so it is written here)
+const FLAG = {
+  RF_REMOTE_ACCESS:["vă cere să instalați un program prin care un străin vă poate controla aparatul","asks you to install a program that lets a stranger control your device"],
+  RF_CODE_REQUEST:["vă cere un cod primit prin SMS","asks for a code you received by SMS"],
+  RF_DATA_REQUEST:["vă cere datele cardului sau date personale","asks for your card or personal details"],
+  RF_PAYMENT_REQUEST:["vă cere bani","asks you for money"],
+  RF_SUSPICIOUS_CONTACT:["vine de la un expeditor sau o adresă nesigură","comes from an untrusted sender or address"],
+  RF_SECRECY:["vă cere să păstrați secretul","asks you to keep it secret"],
+  RF_TOO_GOOD:["vă promite bani sau premii prea frumoase ca să fie adevărate","promises money or prizes that are too good to be true"],
+  RF_THREAT:["încearcă să vă sperie","tries to frighten you"],
+  RF_URGENCY:["vă grăbește","rushes you"],
+  RF_CHANNEL_SWITCH:["vă cere să mutați discuția în altă aplicație","asks you to move the chat to another app"],
+  RF_NEW_NUMBER:["scrie de pe un număr nou","writes from a new number"],
+  RF_EMOTIONAL_PRESSURE:["încearcă să vă emoționeze","plays on your feelings"],
+  RF_IMPERSONATION:["se dă drept o instituție sau o persoană cunoscută","pretends to be an institution or someone you know"]
+};
+const ICON = {SCAM:"✕", SUSPICIOUS:"⚠", SAFE:"✓"};
+const COLOR = {SCAM:"var(--bad-line)", SUSPICIOUS:"var(--warn-line)", SAFE:"var(--safe-line)"};
+
+const [head, ...lines] = CSV.trim().split("\n");
+const keys = head.split(",");
+const data = lines.map(l => Object.fromEntries(l.split(",").map((v, i) => [keys[i], v])));
+let filter = null, selected = null;
+
+function esc(s){return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function chips(){
+  const n = v => data.filter(d => d.verdict === v).length;
+  const c = [["all","Scenarii", data.length, ""],["SCAM","SCAM ✕", n("SCAM"),"scam"],["SUSPICIOUS","SUSPICIOUS ⚠", n("SUSPICIOUS"),"sus"],["SAFE","SAFE ✓", n("SAFE"),"safe"]];
+  document.getElementById("chips").innerHTML = c.map(([k,l,v,cl]) =>
+    `<button class="chip ${cl} ${(filter||"all")===k?"on":""}" data-k="${k}">${l}<b>${v}</b></button>`).join("");
+  document.querySelectorAll(".chip").forEach(b => b.onclick = () => { filter = b.dataset.k === "all" ? null : b.dataset.k; render(); });
+}
+
+function rows(){
+  document.getElementById("rows").innerHTML = data.filter(d => !filter || d.verdict === filter).map(d => `
+    <tr class="row ${selected===d.id?"sel":""}" data-id="${d.id}">
+      <td>${d.id}</td>
+      <td><span class="v ${d.verdict}">${ICON[d.verdict]} ${d.verdict}</span></td>
+      <td>${esc(d.scam_type)}</td>
+      <td><div style="display:flex;gap:6px;align-items:center"><span style="width:28px">${d.risk_score}</span><div class="bar" style="flex:1"><i style="width:${d.risk_score}%;background:${COLOR[d.verdict]}"></i></div></div></td>
+      <td>${d.first_alert || "—"}</td>
+    </tr>`).join("");
+  document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { selected = r.dataset.id; render(); });
+}
+
+function detail(){
+  const el = document.getElementById("detail");
+  const d = data.find(x => x.id === selected);
+  if (!d) { el.innerHTML = '<p class="muted">Select a scenario.</p>'; return; }
+  const flags = d.red_flags ? d.red_flags.split(";") : [];
+  const when = d.first_alert ? `The alert fires at message <b>${d.first_alert}</b>, when the running score first reaches 25.` : "No alert: the score never reached 25.";
+  el.innerHTML = `<h2>${d.id} · <span class="v ${d.verdict}">${ICON[d.verdict]} ${d.verdict}</span></h2>
+    <div class="muted">${esc(d.scam_type)} · risk ${d.risk_score}/100</div>
+    <p>${when}</p>
+    ${flags.length ? "<b>Semne de alarmă</b><ul>" + flags.map(f => `<li>Mesajul ${esc((FLAG[f]||["",""])[0])}<br><span class="muted">${esc((FLAG[f]||["",""])[1])} · <code>${esc(f)}</code></span></li>`).join("") + "</ul>"
+      : '<p class="muted">No red flags.</p>'}
+    ${d.verdict==="SAFE" && flags.length ? '<p class="muted">A single weak flag stays under the alert threshold, so a genuine message is not interrupted.</p>' : ""}`;
+}
+
+function types(){
+  const counts = {};
+  data.filter(d => d.scam_type !== "NONE").forEach(d => counts[d.scam_type] = (counts[d.scam_type]||0) + 1);
+  const max = Math.max(...Object.values(counts));
+  document.getElementById("types").innerHTML = Object.entries(counts).sort((a,b) => b[1]-a[1]).map(([t,n]) =>
+    `<div class="trow"><span>${esc(t)}</span><div class="bar"><i style="width:${n/max*100}%;background:var(--brand)"></i></div><span>${n}</span></div>`).join("");
+}
+
+function render(){ chips(); rows(); detail(); }
+selected = "T04"; render(); types();
+</script>
+</body>
+</html>

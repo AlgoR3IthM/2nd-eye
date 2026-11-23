@@ -5,7 +5,7 @@ Raul's pieces: (1) an Android app with an earthquake-alert style full-screen war
 imports it — to check where it lives), (3) training data `Nou Raul/train_data.jsonl` and a 100-case benchmark `Nou Raul/stress_test.py`.
 
 This file describes only what exists in our code today. Anything marked **to check** was not confirmed in the code.
-Rules that still apply after the merge (PLAN.md §0, AI.md): no message text to any cloud AI, no message text logged or written to disk,
+Rules that still apply after the merge (PLAN.md §0): no message text to any cloud AI, no message text logged or written to disk,
 warnings from fixed Romanian templates, deterministic results.
 
 ---
