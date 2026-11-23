@@ -37,9 +37,25 @@ except Exception:  # fusion may be missing or broken; report per request, never 
     fusion = None
 
 app = FastAPI(title="Scam Shield", docs_url=None, redoc_url=None)
-# Listening on the local network only; "*" also covers Origin "null" (file://) and chrome-extension://.
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
+# Cross-origin reads are allowed only for this app's own page on the laptop and for browser extensions. A wildcard here
+# would let any website open in the browser read the API (including /api/live, which holds real message text).
+# A phone on the same Wi-Fi loads the page from this server, so it is same-origin and needs no CORS.
+app.add_middleware(CORSMiddleware,
+                   allow_origin_regex=r"^(chrome-extension://[a-p]{32}|http://(localhost|127\.0\.0\.1)(:\d+)?)$",
+                   allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type"],
                    allow_credentials=False)
+
+_LOOPBACK_IPS = {"127.0.0.1", "::1"}
+_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "[::1]"}
+
+
+def _local_only(request: Request) -> bool:
+    """True only for a request made on this laptop to a loopback name: blocks other devices on the network and
+    DNS-rebinding pages (their Host header is their own domain even when it resolves to 127.0.0.1)."""
+    client = request.client.host if request.client else ""
+    host = (request.headers.get("host") or "").lower()
+    host = host.split("]")[0] + "]" if host.startswith("[") else host.split(":")[0]
+    return client in _LOOPBACK_IPS and host in _LOOPBACK_HOSTS
 
 _LOCK = threading.Lock()   # one analysis (one LLM call) at a time
 
@@ -215,12 +231,17 @@ def _live_clear() -> dict:
 
 
 @app.get("/api/live")
-async def api_live():
+async def api_live(request: Request):
+    # Real WhatsApp / Gmail text: only for the browser on this laptop, never for other devices on the network.
+    if not _local_only(request):
+        return _error(403, "live messages are only shown on this laptop")
     return JSONResponse(await run_in_threadpool(_live_all), headers={"Cache-Control": "no-store"})
 
 
 @app.delete("/api/live")
-async def api_live_clear():
+async def api_live_clear(request: Request):
+    if not _local_only(request):
+        return _error(403, "live messages are only shown on this laptop")
     return await run_in_threadpool(_live_clear)
 
 
