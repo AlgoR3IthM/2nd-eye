@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scam Shield — Neuro-Symbolic Edge Guard</title>
+  <style>
+    :root {
+      --bg: #0b1120; --card: #111827; --border: #1f2937;
+      --text: #f3f4f6; --muted: #9ca3af;
+      --safe: #10b981; --susp: #f59e0b; --scam: #ef4444; --accent: #3b82f6;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 28px; border-bottom: 1px solid var(--border); background: #090e1a;
+    }
+    .badge {
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      background: rgba(16, 185, 129, 0.15); color: var(--safe); border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; padding: 24px 28px; max-width: 1440px; margin: auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    h2 { margin: 0 0 14px 0; font-size: 17px; color: #e5e7eb; display: flex; align-items: center; gap: 8px; }
+    textarea, input {
+      width: 100%; background: #0b1120; color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-bottom: 10px;
+    }
+    button {
+      background: var(--accent); color: white; border: none; padding: 10px 16px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    button:hover { opacity: 0.92; }
+    button.secondary { background: #1f2937; color: #e5e7eb; }
+    .verdict-box {
+      padding: 18px; border-radius: 12px; margin-bottom: 16px; border: 2px solid var(--border);
+      transition: all 0.25s ease;
+    }
+    .verdict-SAFE { border-color: var(--safe); background: rgba(16, 185, 129, 0.12); }
+    .verdict-SUSPICIOUS { border-color: var(--susp); background: rgba(245, 158, 11, 0.14); }
+    .verdict-SCAM { border-color: var(--scam); background: rgba(239, 68, 68, 0.16); }
+    .pill {
+      display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px;
+      font-weight: 600; margin: 3px 4px 3px 0; background: #1f2937; color: #93c5fd;
+    }
+    .msg-bubble {
+      padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; font-size: 14px;
+      background: #1a2333; border-left: 3px solid var(--accent);
+    }
+    .msg-reader { border-left-color: #6b7280; opacity: 0.85; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <strong style="font-size: 20px;">🛡️ Scam Shield</strong>
+      <span style="color: var(--muted); margin-left: 10px; font-size: 14px;">Neuro-Symbolic Edge Protection (AlgoR3IthM)</span>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <span id="wsStatus" class="badge">● WebSocket Live: Conectare...</span>
+      <span class="badge">100% Offline • Qwen2.5-3B Local</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- STÂNGA: Simulator + Batch Test Runner -->
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <div class="card">
+        <h2>💬 Analiză Rapidă / Simulator Conversație</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <input id="senderName" placeholder="Expeditor (ex: BancaDunarea / +40722...)" value="+40 721 999 888" />
+          <select id="channelSelect" style="background:#0b1120; color:white; border:1px solid #1f2937; border-radius:8px; padding:10px;">
+            <option value="whatsapp">WhatsApp</option>
+            <option value="sms">SMS</option>
+            <option value="email">Email</option>
+            <option value="call_transcript">Call Transcript</option>
+          </select>
+        </div>
+        <textarea id="msgInput" rows="4" placeholder="Lipește aici mesajul suspect sau un JSON complet de scenariu..."></textarea>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button onclick="runSingleAnalysis()">Analizează Mesaj</button>
+          <button class="secondary" onclick="loadPreset('scam_family')">Preset: Țeapă Rudă</button>
+          <button class="secondary" onclick="loadPreset('scam_bank')">Preset: Bancă Falsă</button>
+          <button class="secondary" onclick="loadPreset('safe_otp')">Preset: Cod OTP Legitim</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📂 Evaluare Batch (Test Set JSON)</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-top: 0;">Selectează simultan toate fișierele <code>.json</code> din setul de testare pentru procesare locală instantă.</p>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="file" id="batchFiles" multiple accept=".json" style="margin:0;" />
+          <button onclick="runBatch()">Rulează Batch</button>
+          <button class="secondary" id="exportBtn" style="display:none;" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div id="batchSummary" style="margin-top:12px; font-weight:600;"></div>
+        <div style="max-height: 280px; overflow-y: auto;">
+          <table id="batchTable" style="display:none;">
+            <thead><tr><th>ID</th><th>Verdict</th><th>Tip</th><th>Scor</th><th>Alertă #</th><th>Red Flags</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DREAPTA: Alerta Senior-Friendly + Telemetrie Live (inclusiv de pe Android!) -->
+    <div class="card">
+      <h2>🚨 Alerta Utilizator & Telemetrie Live (Android / Desktop)</h2>
+      <div id="resultContainer">
+        <div class="verdict-box verdict-SAFE">
+          <div style="font-size: 22px; font-weight: 700;">🛡️ Sistem Activ — Aștept mesaje</div>
+          <p style="color: var(--muted); margin: 8px 0 0 0;">Orice conversație analizată pe telefonul Android (WhatsApp) sau aici apare instantaneu în timp real.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let lastBatchResults = [];
+
+    // Conectare WebSocket Live pentru mesajele capturate de Android
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/ws/live`);
+      const badge = document.getElementById('wsStatus');
+      ws.onopen = () => { badge.textContent = '● Live Sync Android: ACTIV'; };
+      ws.onclose = () => { badge.textContent = '○ Reconectare...'; setTimeout(connectWS, 2000); };
+      ws.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        renderResult(data, '📱 Sursă: Telefon Android (WhatsApp Live)');
+      };
+    }
+    connectWS();
+
+    function loadPreset(type) {
+      if (type === 'scam_family') {
+        document.getElementById('senderName').value = '+40 733 444 555';
+        document.getElementById('channelSelect').value = 'whatsapp';
+        document.getElementById('msgInput').value = JSON.stringify({
+          id: "DEMO_FAMILY", channel: "whatsapp",
+          sender: { name: null, address: "+40 733 444 555", known_contact: false },
+          messages: [
+            { n: 1, from: "sender", text: "Bună mami, mi s-a stricat telefonul, ăsta e numărul nou." },
+            { n: 2, from: "reader", text: "Cine e?" },
+            { n: 3, from: "sender", text: "Eu, Andrei." },
+            { n: 4, from: "reader", text: "Bine, am salvat." },
+            { n: 5, from: "sender", text: "Am o urgență, îmi faci tu un transfer de 1.500 lei azi? Ți-i dau mâine." },
+            { n: 6, from: "sender", text: "Te rog nu-i spune lui tata." }
+          ]
+        }, null, 2);
+      } else if (type === 'scam_bank') {
+        document.getElementById('senderName').value = 'BancaDunarea';
+        document.getElementById('channelSelect').value = 'sms';
+        document.getElementById('msgInput').value = "Banca Dunărea: Cardul dvs. a fost blocat. Deblocați-l în 24h pe bancadunarea-online.com";
+      } else if (type === 'safe_otp') {
+        document.getElementById('senderName').value = 'BancaDunarea';
+        document.getElementById('channelSelect').value = 'sms';
+        document.getElementById('msgInput').value = "Banca Dunărea: Codul de autorizare este 482913. Nu comunicați acest cod nimănui, nici angajaților băncii.";
+      }
+    }
+
+    async function runSingleAnalysis() {
+      const raw = document.getElementById('msgInput').value.trim();
+      if (!raw) return;
+      let payload;
+      try {
+        payload = JSON.parse(raw);
+      } catch {
+        const sender = document.getElementById('senderName').value.trim() || 'Necunoscut';
+        payload = {
+          id: "WEB_" + Math.floor(Math.random() * 9000 + 1000),
+          channel: document.getElementById('channelSelect').value,
+          sender: { name: sender.startsWith('+') ? null : sender, address: sender, known_contact: false },
+          messages: [{ n: 1, from: "sender", text: raw }]
+        };
+      }
+      const res = await fetch('/analyze', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      renderResult(data, '💻 Sursă: Simulator Desktop');
+    }
+
+    function renderResult(r, sourceLabel) {
+      const icon = r.verdict === 'SCAM' ? '🛑' : (r.verdict === 'SUSPICIOUS' ? '⚠️' : '✅');
+      const title = r.verdict === 'SCAM' ? 'PERICOL DE ÎNȘELĂCIUNE (SCAM)' :
+                    (r.verdict === 'SUSPICIOUS' ? 'MESAJ SUSPECT — VERIFICAȚI' : 'CONVERSAȚIE SIGURĂ (SAFE)');
+      const flagsHtml = (r.red_flags || []).map(f => `<span class="pill">${f}</span>`).join('') || '<span style="color:var(--muted)">Niciun semnal de alarmă</span>';
+      const msgsHtml = (r.messages || []).map(m =>
+        `<div class="msg-bubble ${m.from === 'reader' ? 'msg-reader' : ''}"><strong>[${m.n}] ${m.from}:</strong> ${m.text}</div>`
+      ).join('');
+      const offHtml = r.official_suggestion
+        ? `<div style="margin-top:12px; padding:10px; border-radius:8px; background:#0b1120; border:1px solid #374151;">
+             📞 <strong>Canal Oficial Recomandat:</strong> ${r.official_suggestion.organisation} —
+             <span style="color:#34d399; font-weight:700;">${r.official_suggestion.phone || r.official_suggestion.website}</span>
+           </div>` : '';
+
+      document.getElementById('resultContainer').innerHTML = `
+        <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">${sourceLabel} • ID: ${r.id}</div>
+        <div class="verdict-box verdict-${r.verdict}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:20px; font-weight:800;">${icon} ${title}</span>
+            <span style="font-size:20px; font-weight:800;">Scor: ${r.risk_score}/100</span>
+          </div>
+          <p style="font-size:16px; line-height:1.5; margin:12px 0;">${r.warning_ro}</p>
+          ${offHtml}
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:13px; color:var(--muted); margin-bottom:6px;">
+            Categorie: <strong>${r.scam_type}</strong> • Prima alertă la mesajul: <strong>${r.first_alert ?? '-'}</strong>
+          </div>
+          <div>${flagsHtml}</div>
+        </div>
+        <div style="font-size:13px; color:var(--muted); margin-bottom:6px;">Firul conversației analizate:</div>
+        ${msgsHtml}
+      `;
+    }
+
+    async function runBatch() {
+      const files = document.getElementById('batchFiles').files;
+      if (!files.length) return alert('Selectează cel puțin un fișier .json!');
+      const scenarios = [];
+      for (const file of files) {
+        scenarios.push(JSON.parse(await file.text()));
+      }
+      const res = await fetch('/analyze-batch', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(scenarios)
+      });
+      const data = await res.json();
+      lastBatchResults = data.results;
+      document.getElementById('batchSummary').textContent =
+        `Total: ${data.summary.total} | 🛑 SCAM: ${data.summary.SCAM} | ⚠️ SUSPICIOUS: ${data.summary.SUSPICIOUS} | ✅ SAFE: ${data.summary.SAFE}`;
+      const tbody = document.querySelector('#batchTable tbody');
+      tbody.innerHTML = data.results.map(r => `
+        <tr>
+          <td><strong>${r.id}</strong></td>
+          <td>${r.verdict}</td>
+          <td>${r.scam_type}</td>
+          <td>${r.risk_score}</td>
+          <td>${r.first_alert ?? '-'}</td>
+          <td>${(r.red_flags || []).join(', ')}</td>
+        </tr>
+      `).join('');
+      document.getElementById('batchTable').style.display = 'table';
+      document.getElementById('exportBtn').style.display = 'inline-block';
+    }
+
+    function exportCSV() {
+      const header = "id,verdict,scam_type,risk_score,first_alert,red_flags\n";
+      const rows = lastBatchResults.map(r =>
+        `${r.id},${r.verdict},${r.scam_type},${r.risk_score},${r.first_alert ?? ''},"${(r.red_flags || []).join(';')}"`
+      ).join("\n");
+      const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'scam_shield_results.csv';
+      a.click();
+    }
+  </script>
+</body>
+</html>

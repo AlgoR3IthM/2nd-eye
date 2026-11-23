@@ -27,3 +27,18 @@ AGENTS.md
 .claude/
 .cursor/
 .github/copilot-instructions.md
+
+# Android / mobile build output and machine-specific files
+mobile/android/local.properties
+mobile/android/.gradle/
+mobile/android/.idea/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/app/.cxx/
+mobile/android/app/release/
+mobile/android/build-native/
+mobile/android/app/src/main/cpp/llama.cpp/
+*.apk
+*.aab
+*.jks
+*.keystore

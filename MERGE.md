@@ -1,8 +1,9 @@
 # MERGE.md — merging Raul's work into 2nd Eye
 
-Raul's pieces: (1) an Android app with an earthquake-alert style full-screen warning (`scam-shield-android`, **not in this repo**),
-(2) a detection engine (a Python module `engine` with `analyze_scenario(scenario)`, **not in this repo**: only `Nou Raul/stress_test.py`
-imports it — to check where it lives), (3) training data `Nou Raul/train_data.jsonl` and a 100-case benchmark `Nou Raul/stress_test.py`.
+Raul's pieces: (1) an Android app with an earthquake-alert style full-screen warning (now in `mobile/android/`),
+(2) a detection engine (Python module `engine` with `analyze_scenario(scenario)`, now in `mobile/engine/`), (3) training data
+`Nou Raul/train_data.jsonl` (used for his `scamshield-3b` model) and a 100-case benchmark `Nou Raul/stress_test.py`.
+Added to the repo on 2026-11-23; see `docs/MOBILE.md`. Sections below were written during the hackathon, before that.
 
 This file describes only what exists in our code today. Anything marked **to check** was not confirmed in the code.
 Rules that still apply after the merge (PLAN.md §0): no message text to any cloud AI, no message text logged or written to disk,

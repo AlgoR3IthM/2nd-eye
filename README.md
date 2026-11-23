@@ -1,7 +1,9 @@
 # 2nd Eye (Scam Shield) by AlgoR3IthM
 
 A local, privacy-first scam detector for elderly Romanian speakers: it reads WhatsApp, Gmail or pasted messages, scores them
-message by message and shows a plain-Romanian warning. Built in one day at the Scam Shield hackathon (19 November 2026) by
+message by message and shows a plain-Romanian warning. It comes in two halves: a **laptop app** (this folder: web UI, WhatsApp/Gmail
+watchers, desktop alerts, Qwen3-4B in LM Studio) and a **mobile app** ([`mobile/`](mobile): Android, reads WhatsApp on the phone and
+shows a full-screen alert, with a fine-tuned small Qwen model `scamshield-3b` that can run on the phone). Built in one day at the Scam Shield hackathon (19 November 2026) by
 **[raduedu](https://github.com/raduedu), [mara488](https://github.com/mara488) and [Moghedien-ux](https://github.com/Moghedien-ux)**,
 equal co-authors (see [AUTHORS.md](AUTHORS.md)). Released under the [MIT License](LICENSE).
 
@@ -17,7 +19,8 @@ its red flags in the app's own Romanian wording). It needs no server, no model a
 
 ## Docs
 
-- [docs/TRAINING.md](docs/TRAINING.md): the QLoRA fine-tune of the local model, what ran and why it was not shipped.
+- [docs/MOBILE.md](docs/MOBILE.md): the Android app, its engine, the `scamshield-3b` model and its training data, known gaps.
+- [docs/TRAINING.md](docs/TRAINING.md): the QLoRA fine-tune of the laptop model, what ran and why it was not shipped.
 - [docs/DATASETS.md](docs/DATASETS.md): every dataset, its source, and which ones were kept out of training.
 - `PLAN.md` (design contract and scoring), `PITCH.md` (presentation), `MERGE.md` (merging with the Android work).
 
